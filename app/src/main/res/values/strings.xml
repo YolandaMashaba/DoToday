@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">DoToday</string>
+    <string name="header_month">August 2026</string>
+
+    <!-- Bottom Nav -->
+    <string name="nav_inbox">Inbox</string>
+    <string name="nav_timeline">Timeline</string>
+    <string name="nav_ai">AI</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Timeline Samples -->
+    <string name="task_wake_up">Rise and Shine</string>
+    <string name="task_start_structured">Get Started with Structured!</string>
+    <string name="task_first_task">Add Your First Task</string>
+    <string name="task_inbox">Fill Your Inbox</string>
+    <string name="task_own_it">Make It Your Own</string>
+
+    <string name="desc_structured">Tap here to learn the basics</string>
+    <string name="desc_first_task">Start structuring your day</string>
+    <string name="desc_inbox">Don\'t forget anything</string>
+    <string name="desc_own_it">Adjust colors and more</string>
+</resources>

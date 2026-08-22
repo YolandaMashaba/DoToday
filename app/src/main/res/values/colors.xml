@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Requested Palette Base -->
+    <color name="main_blue">#1565C0</color>
+    <color name="heading_green">#2E7D32</color>
+    <color name="accent_yellow">#F9A825</color>
+    <color name="timeline_blue">#2196F3</color>
+
+    <!-- Light Mode Variants -->
+    <color name="ashy_grey_light_bg">#CFD8DC</color>
+    <color name="ashy_grey_light_surface">#ECEFF1</color>
+
+    <!-- Dark Mode Variants -->
+    <color name="ashy_grey_dark_bg">#37474F</color>
+    <color name="ashy_grey_dark_surface">#455A64</color>
+    <color name="timeline_line_dark">#424242</color>
+
+    <!-- Semantic Mappings for code/layouts -->
+    <color name="timeline_line">@color/timeline_line_dark</color>
+</resources>
