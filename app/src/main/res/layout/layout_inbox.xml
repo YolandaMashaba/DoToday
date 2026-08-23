@@ -12,7 +12,7 @@
         android:text="Inbox"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="@color/heading_green"
+        android:textColor="@color/heading_blue"
         android:layout_marginBottom="16dp"/>
 
 </LinearLayout>

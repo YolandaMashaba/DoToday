@@ -3,13 +3,13 @@
     <style name="Base.Theme.DoToday" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/main_blue</item>
         <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/heading_green</item>
+        <item name="colorSecondary">@color/heading_blue</item>
         <item name="colorOnSecondary">@color/white</item>
         <item name="colorTertiary">@color/accent_yellow</item>
-        <item name="colorOnTertiary">@color/black</item>
+        <item name="colorOnTertiary">@color/white_two</item>
         <item name="android:windowBackground">@color/ashy_grey_light_bg</item>
         <item name="colorSurface">@color/ashy_grey_light_surface</item>
-        <item name="colorOnSurface">@color/black</item>
+        <item name="colorOnSurface">@color/white_two</item>
     </style>
 
     <style name="Theme.DoToday" parent="Base.Theme.DoToday" />

@@ -53,6 +53,7 @@
         app:tint="?attr/colorOnSurface"
         tools:src="@drawable/ic_alarm" />
 
+
     <View
         android:id="@+id/timeline_line_bottom"
         android:layout_width="2dp"
