@@ -1,18 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:background="?attr/colorSurface">
+    android:background="?attr/colorSurface"
+    android:padding="16dp">
 
     <TextView
-        android:layout_width="match_parent"
+        android:id="@+id/tv_inbox_title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Inbox"
-        android:textSize="20sp"
+        android:textSize="32sp"
         android:textStyle="bold"
-        android:textColor="@color/heading_blue"
-        android:layout_marginBottom="16dp"/>
+        android:textColor="@color/white"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="32dp" />
 
-</LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_inbox_title">
+
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/ic_inbox"
+            app:tint="@color/app_secondary"
+            android:alpha="0.8"
+            android:contentDescription="@string/nav_inbox" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Your Unstructured Thoughts"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:paddingStart="32dp"
+            android:paddingEnd="32dp"
+            android:text="Capture tasks and thoughts as they come. Move them to your timeline when you're ready to schedule."
+            android:textColor="@color/text_secondary_color"
+            android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_new_inbox_task"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:backgroundTint="@color/inbox_button_background"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:text="+ New Inbox Task"
+            android:textAllCaps="false"
+            android:textColor="@color/app_secondary"
+            app:cornerRadius="12dp" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

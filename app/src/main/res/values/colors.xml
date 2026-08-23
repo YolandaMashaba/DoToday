@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="white_two">#FFFFFFFF</color>
+    <!-- Basic Colors -->
     <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
 
-    <!-- Requested Palette Base -->
-    <color name="main_blue">#1565C0</color>
-    <color name="heading_blue">#2196F3</color>
-    <color name="accent_yellow">#F9A825</color>
-    <color name="timeline_blue">#2196F3</color>
+    <!-- App Main Palette (Blue requested by user) -->
+    <color name="app_primary">#1565C0</color>
+    <color name="app_secondary">#2196F3</color>
+    <color name="app_accent">#F9A825</color>
 
-    <!-- Light Mode Variants -->
-    <color name="ashy_grey_light_bg">#1E1E1E</color>
-    <color name="ashy_grey_light_surface">#424242</color>
+    <!-- Background and Surface Colors (As currently mapped) -->
+    <color name="theme_bg_dark">#1E1E1E</color>
+    <color name="theme_surface_dark">#424242</color>
 
-    <!-- Dark Mode Variants -->
-    <color name="light_white_dark_bg">#FFFFFFFF</color>
-    <color name="light_white_dark_surface">#FFFFFFFF</color>
-    <color name="timeline_line_dark">#2196F3</color>
+    <color name="theme_bg_light">#FFFFFFFF</color>
+    <color name="theme_surface_light">#FFFFFFFF</color>
 
-    <!-- Semantic Mappings for code/layouts -->
-    <color name="timeline_line">@color/timeline_line_dark</color>
+    <!-- Specific Component Colors -->
+    <color name="timeline_line_color">#2196F3</color>
+    <color name="inbox_button_background">#3E2723</color>
+    <color name="text_hint_color">#888888</color>
+    <color name="text_secondary_color">#BBBBBB</color>
 </resources>

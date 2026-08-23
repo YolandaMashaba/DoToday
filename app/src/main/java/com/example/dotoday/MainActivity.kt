@@ -36,6 +36,14 @@ class MainActivity : AppCompatActivity() {
         findViewById<FloatingActionButton>(R.id.fab_add_task).setOnClickListener {
             showAddTaskDialog(adapter)
         }
+
+        findViewById<View>(R.id.btn_new_inbox_task).setOnClickListener {
+            Snackbar.make(it, "New Inbox Task functionality coming soon!", Snackbar.LENGTH_SHORT).show()
+        }
+
+        findViewById<View>(R.id.btn_logout).setOnClickListener {
+            Snackbar.make(it, "Logged out successfully!", Snackbar.LENGTH_SHORT).show()
+        }
     }
 
     private fun showAddTaskDialog(adapter: TimelineAdapter) {
@@ -67,7 +75,7 @@ class MainActivity : AppCompatActivity() {
             tvNumber.text = number
             if (number == "20") {
                 tvNumber.setBackgroundResource(R.drawable.shape_circle_small)
-                tvNumber.backgroundTintList = getColorStateList(R.color.timeline_blue)
+                tvNumber.backgroundTintList = getColorStateList(R.color.app_secondary)
                 tvNumber.setTextColor(getColor(R.color.white))
             }
             container.addView(view)

@@ -31,7 +31,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/header_month"
-                    android:textColor="@color/timeline_blue"
+                    android:textColor="@color/app_secondary"
                     android:textSize="24sp"
                     android:textStyle="bold" />
 
@@ -41,7 +41,7 @@
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_calendar_edit"
-                    app:tint="@color/timeline_blue"
+                    app:tint="@color/app_secondary"
                     android:contentDescription="@string/app_name" />
 
             </RelativeLayout>
@@ -107,7 +107,7 @@
         android:contentDescription="@string/nav_timeline"
         app:backgroundTint="?attr/colorSecondary"
         app:srcCompat="@android:drawable/ic_input_add"
-        app:tint="@android:color/white" />
+        app:tint="@color/white" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"

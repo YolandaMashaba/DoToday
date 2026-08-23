@@ -10,9 +10,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="My Notes"
-        android:textSize="20sp"
+        android:textSize="32sp"
         android:textStyle="bold"
-        android:textColor="@color/heading_blue"
+        android:textColor="@color/app_secondary"
+        android:layout_marginTop="32dp"
         android:layout_marginBottom="16dp"/>
 
     <EditText
@@ -23,6 +24,7 @@
         android:gravity="top"
         android:hint="Write your notes here..."
         android:background="@null"
-        android:textColor="@color/white"/>
+        android:textColor="@color/white"
+        android:importantForAutofill="no" />
 
 </LinearLayout>

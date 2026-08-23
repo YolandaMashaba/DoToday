@@ -12,7 +12,7 @@
         android:id="@+id/tv_day_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#888888"
+        android:textColor="@color/text_hint_color"
         android:textSize="12sp"
         tools:text="Mon" />
 
@@ -36,13 +36,13 @@
             android:layout_width="8dp"
             android:layout_height="8dp"
             android:background="@drawable/shape_circle_small"
-            android:backgroundTint="@color/timeline_blue"/>
+            android:backgroundTint="@color/app_secondary"/>
         <View
             android:layout_width="8dp"
             android:layout_height="8dp"
             android:layout_marginStart="2dp"
             android:background="@drawable/shape_circle_small"
-            android:backgroundTint="@color/main_blue"/>
+            android:backgroundTint="@color/app_primary"/>
     </LinearLayout>
 
 </LinearLayout>
