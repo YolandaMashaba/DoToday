@@ -5,18 +5,31 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.dotoday.data.TodoistRepository
+import com.example.dotoday.data.TodoistTask
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
+import java.util.Calendar
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
+
+    private val todoistRepository = TodoistRepository()
+    private lateinit var inboxAdapter: InboxAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,6 +44,7 @@ class MainActivity : AppCompatActivity() {
 
         val adapter = setupTimeline()
         setupCalendar()
+        setupInbox()
         setupBottomNav()
 
         findViewById<FloatingActionButton>(R.id.fab_add_task).setOnClickListener {
@@ -38,7 +52,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.btn_new_inbox_task).setOnClickListener {
-            Snackbar.make(it, "New Inbox Task functionality coming soon!", Snackbar.LENGTH_SHORT).show()
+            showAddTodoistTaskDialog()
+        }
+
+        findViewById<View>(R.id.btn_new_inbox_task_bottom).setOnClickListener {
+            showAddTodoistTaskDialog()
         }
 
         findViewById<View>(R.id.btn_logout).setOnClickListener {
@@ -47,19 +65,67 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showAddTaskDialog(adapter: TimelineAdapter) {
-        val builder = android.app.AlertDialog.Builder(this)
-        val input = android.widget.EditText(this)
-        input.hint = "Task Title"
-        builder.setTitle("Add New Task")
-        builder.setView(input)
-        builder.setPositiveButton("Add") { _, _ ->
-            val title = input.text.toString()
-            if (title.isNotEmpty()) {
-                adapter.addItem(TimelineItem("Now", "Now", title, "New task", R.drawable.ic_alarm))
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_task, null)
+        val etTitle = dialogView.findViewById<TextInputEditText>(R.id.et_task_title)
+        val etDescription = dialogView.findViewById<TextInputEditText>(R.id.et_task_description)
+        val etDuration = dialogView.findViewById<TextInputEditText>(R.id.et_task_duration)
+        val btnPickTime = dialogView.findViewById<MaterialButton>(R.id.btn_pick_time)
+        val btnPickEndTime = dialogView.findViewById<MaterialButton>(R.id.btn_pick_end_time)
+
+        var selectedHour = 8
+        var selectedMinute = 0
+        var endHour = 8
+        var endMinute = 30
+
+        fun updateDuration() {
+            val startCal = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, selectedHour)
+                set(Calendar.MINUTE, selectedMinute)
             }
+            val endCal = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, endHour)
+                set(Calendar.MINUTE, endMinute)
+            }
+            if (endCal.before(startCal)) endCal.add(Calendar.DAY_OF_YEAR, 1)
+            val diff = (endCal.timeInMillis - startCal.timeInMillis) / (60 * 1000)
+            etDuration.setText(diff.toString())
         }
-        builder.setNegativeButton("Cancel", null)
-        builder.show()
+
+        btnPickTime.setOnClickListener {
+            android.app.TimePickerDialog(this, { _, hourOfDay, minute ->
+                selectedHour = hourOfDay
+                selectedMinute = minute
+                btnPickTime.text = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute)
+                updateDuration()
+            }, selectedHour, selectedMinute, true).show()
+        }
+
+        btnPickEndTime.setOnClickListener {
+            android.app.TimePickerDialog(this, { _, hourOfDay, minute ->
+                endHour = hourOfDay
+                endMinute = minute
+                btnPickEndTime.text = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute)
+                updateDuration()
+            }, endHour, endMinute, true).show()
+        }
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .setPositiveButton("Add") { _, _ ->
+                val title = etTitle.text.toString()
+                val description = etDescription.text.toString()
+                
+                if (title.isNotEmpty()) {
+                    val startTime = String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute)
+                    val endTime = String.format(Locale.getDefault(), "%02d:%02d", endHour, endMinute)
+                    adapter.addItem(TimelineItem(startTime, endTime, title, description, R.drawable.ic_alarm))
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setTextColor(getColor(R.color.app_secondary))
+        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(getColor(R.color.text_secondary_color))
     }
 
 
@@ -122,6 +188,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.nav_inbox -> {
                     layoutInbox.visibility = View.VISIBLE
+                    fetchTodoistTasks()
                     true
                 }
                 R.id.nav_settings -> {
@@ -136,7 +203,111 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupInbox() {
+        val rv = findViewById<RecyclerView>(R.id.rv_inbox)
+        rv.layoutManager = LinearLayoutManager(this)
+        inboxAdapter = InboxAdapter(mutableListOf())
+        rv.adapter = inboxAdapter
+    }
+
+    private fun fetchTodoistTasks() {
+        val pb = findViewById<ProgressBar>(R.id.pb_inbox_loading)
+        val rv = findViewById<RecyclerView>(R.id.rv_inbox)
+        val emptyState = findViewById<View>(R.id.layout_inbox_empty)
+        val btnBottom = findViewById<View>(R.id.btn_new_inbox_task_bottom)
+
+        pb.visibility = View.VISIBLE
+        rv.visibility = View.GONE
+        emptyState.visibility = View.GONE
+        btnBottom.visibility = View.GONE
+
+        lifecycleScope.launch {
+            val result = todoistRepository.getTasks()
+            pb.visibility = View.GONE
+            
+            result.onSuccess { tasks ->
+                if (tasks.isEmpty()) {
+                    emptyState.visibility = View.VISIBLE
+                } else {
+                    inboxAdapter.updateTasks(tasks)
+                    rv.visibility = View.VISIBLE
+                    btnBottom.visibility = View.VISIBLE
+                }
+            }.onFailure { error ->
+                emptyState.visibility = View.VISIBLE
+                Snackbar.make(rv, "Failed to fetch tasks: ${error.message}", Snackbar.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun showAddTodoistTaskDialog() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_task, null)
+        val etTitle = dialogView.findViewById<TextInputEditText>(R.id.et_task_title)
+        val etDescription = dialogView.findViewById<TextInputEditText>(R.id.et_task_description)
+        
+        // Hide time and duration for Todoist Inbox tasks
+        dialogView.findViewById<View>(R.id.btn_pick_time).visibility = View.GONE
+        dialogView.findViewById<View>(R.id.btn_pick_end_time).visibility = View.GONE
+        dialogView.findViewById<View>(R.id.et_task_duration).parent.let { (it.parent as View).visibility = View.GONE }
+        dialogView.findViewById<TextView>(R.id.tv_dialog_title)?.text = "New Inbox Task"
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle("New Inbox Task")
+            .setView(dialogView)
+            .setPositiveButton("Add") { _, _ ->
+                val title = etTitle.text.toString()
+                val description = etDescription.text.toString()
+                if (title.isNotEmpty()) {
+                    addNewTodoistTask(title, description)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setTextColor(getColor(R.color.app_secondary))
+        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(getColor(R.color.text_secondary_color))
+    }
+
+    private fun addNewTodoistTask(title: String, description: String? = null) {
+        lifecycleScope.launch {
+            val result = todoistRepository.addTask(title, description)
+            result.onSuccess {
+                fetchTodoistTasks() // Refresh list
+                Snackbar.make(findViewById(R.id.main), "Task added to Todoist", Snackbar.LENGTH_SHORT).show()
+            }.onFailure { error ->
+                Snackbar.make(findViewById(R.id.main), "Failed to add task: ${error.message}", Snackbar.LENGTH_LONG).show()
+            }
+        }
+    }
+
     data class TimelineItem(val time: String, val endTime: String, val title: String, val subtitle: String, val iconRes: Int)
+
+    class InboxAdapter(private val tasks: MutableList<TodoistTask>) : RecyclerView.Adapter<InboxAdapter.ViewHolder>() {
+
+        fun updateTasks(newTasks: List<TodoistTask>) {
+            tasks.clear()
+            tasks.addAll(newTasks)
+            notifyDataSetChanged()
+        }
+
+        class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val tvContent: TextView = view.findViewById(R.id.tv_task_content)
+            val tvDescription: TextView = view.findViewById(R.id.tv_task_description)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_inbox_task, parent, false))
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val task = tasks[position]
+            holder.tvContent.text = task.content
+            holder.tvDescription.text = task.description
+            holder.tvDescription.visibility = if (task.description.isNullOrEmpty()) View.GONE else View.VISIBLE
+        }
+
+        override fun getItemCount() = tasks.size
+    }
 
     class TimelineAdapter(private val items: MutableList<TimelineItem>) : RecyclerView.Adapter<TimelineAdapter.ViewHolder>() {
 
@@ -157,7 +328,7 @@ class MainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = items[position]
-            holder.tvTime.text = item.time
+            holder.tvTime.text = "${item.time}\n${item.endTime}"
             holder.tvTitle.text = item.title
             holder.tvSubtitle.text = item.subtitle
             holder.tvSubtitle.visibility = if (item.subtitle.isEmpty()) View.GONE else View.VISIBLE
