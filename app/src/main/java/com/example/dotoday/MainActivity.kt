@@ -26,6 +26,8 @@ import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
+import android.content.Intent
+import android.util.Log
 
 /**
  * Main activity of the DoToday app.
@@ -86,6 +88,11 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_logout).setOnClickListener {
             Log.d(TAG, "Logout button clicked")
             Snackbar.make(it, "Logged out successfully!", Snackbar.LENGTH_SHORT).show()
+            Log.d("MainActivity", "User logged out, returning to LoginActivity")
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
         }
     }
 
