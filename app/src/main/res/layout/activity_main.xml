@@ -36,10 +36,15 @@
                     android:textStyle="bold" />
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:id="@+id/btn_calendar_picker"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="4dp"
                     android:src="@drawable/ic_calendar_edit"
                     app:tint="@color/app_secondary"
                     android:contentDescription="@string/app_name" />

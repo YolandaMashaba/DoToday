@@ -7,6 +7,7 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CalendarView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -33,8 +34,8 @@ import java.util.Locale
  * Main activity of the DoToday app.
  *
  * Manages the primary navigation sections:
- * - Timeline view (scheduled daily tasks with expandable calendar date selection and interval features)
- * - Calendar header week picker
+ * - Timeline view (scheduled daily tasks with expandable calendar date selection, calendar pop-up dialog, and interval features)
+ * - Calendar header week picker & calendar edit pop-up
  * - Inbox view (synced with Todoist REST API)
  * - Notes section
  * - Settings section
@@ -140,6 +141,11 @@ class MainActivity : AppCompatActivity() {
         setupCalendar()
         setupInbox()
         setupBottomNav()
+
+        findViewById<View>(R.id.btn_calendar_picker)?.setOnClickListener {
+            Log.d(TAG, "Calendar icon clicked - opening calendar dialog overview")
+            showCalendarPickerDialog()
+        }
 
         findViewById<FloatingActionButton>(R.id.fab_add_task).setOnClickListener {
             Log.d(TAG, "FAB clicked - opening add scheduled task dialog")
@@ -278,6 +284,71 @@ class MainActivity : AppCompatActivity() {
         val typedValue = TypedValue()
         theme.resolveAttribute(attr, typedValue, true)
         return typedValue.data
+    }
+
+    /**
+     * Displays a calendar pop-up dialog showing a full calendar and tasks preview for any selected date.
+     */
+    private fun showCalendarPickerDialog() {
+        Log.d(TAG, "showCalendarPickerDialog() displayed")
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_calendar_picker, null)
+        val calendarView = dialogView.findViewById<CalendarView>(R.id.calendar_view_pop)
+        val tvHeader = dialogView.findViewById<TextView>(R.id.tv_tasks_summary_header)
+        val tvNoTasks = dialogView.findViewById<TextView>(R.id.tv_no_tasks_preview)
+        val rvPreview = dialogView.findViewById<RecyclerView>(R.id.rv_dialog_tasks_preview)
+
+        rvPreview.layoutManager = LinearLayoutManager(this)
+
+        var dialogSelectedDayNumber = selectedDayNumber
+        var dialogSelectedFullName = daysList.find { it.number == selectedDayNumber }?.fullName ?: "$selectedDayNumber September 2026 >"
+
+        fun updateDialogTaskPreview(dayNumber: String, fullName: String) {
+            tvHeader.text = "Tasks for $fullName:"
+            val entries = tasksByDay[dayNumber] ?: emptyList()
+            val tasksOnly = entries.filterIsInstance<TimelineEntry.Task>()
+
+            if (tasksOnly.isEmpty()) {
+                tvNoTasks.visibility = View.VISIBLE
+                rvPreview.visibility = View.GONE
+            } else {
+                tvNoTasks.visibility = View.GONE
+                rvPreview.visibility = View.VISIBLE
+                rvPreview.adapter = DialogTaskPreviewAdapter(tasksOnly)
+            }
+        }
+
+        try {
+            val cal = Calendar.getInstance()
+            cal.set(2026, Calendar.SEPTEMBER, dialogSelectedDayNumber.toIntOrNull() ?: 22)
+            calendarView.date = cal.timeInMillis
+        } catch (e: Exception) {
+            Log.w(TAG, "Error setting calendar date: ${e.message}")
+        }
+
+        updateDialogTaskPreview(dialogSelectedDayNumber, dialogSelectedFullName)
+
+        calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
+            dialogSelectedDayNumber = dayOfMonth.toString()
+            val monthNames = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+            val monthName = monthNames.getOrElse(month) { "September" }
+            dialogSelectedFullName = "$dayOfMonth $monthName $year >"
+            updateDialogTaskPreview(dialogSelectedDayNumber, dialogSelectedFullName)
+        }
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .setPositiveButton("View Timeline") { _, _ ->
+                val dayInfo = daysList.find { it.number == dialogSelectedDayNumber }
+                    ?: DayInfo("Day", dialogSelectedFullName, dialogSelectedDayNumber)
+
+                selectCalendarDay(dayInfo, animate = true)
+                Snackbar.make(findViewById(R.id.main), "Switched to $dialogSelectedFullName", Snackbar.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Close", null)
+            .show()
+
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(getColor(R.color.app_secondary))
+        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(getColor(R.color.text_secondary_color))
     }
 
     private fun showAddTaskDialog() {
@@ -497,6 +568,27 @@ class MainActivity : AppCompatActivity() {
             holder.tvContent.text = task.content
             holder.tvDescription.text = task.description
             holder.tvDescription.visibility = if (task.description.isNullOrEmpty()) View.GONE else View.VISIBLE
+        }
+
+        override fun getItemCount() = tasks.size
+    }
+
+    class DialogTaskPreviewAdapter(private val tasks: List<TimelineEntry.Task>) : RecyclerView.Adapter<DialogTaskPreviewAdapter.ViewHolder>() {
+
+        class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val tvContent: TextView = view.findViewById(R.id.tv_task_content)
+            val tvDescription: TextView = view.findViewById(R.id.tv_task_description)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_inbox_task, parent, false))
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val task = tasks[position]
+            holder.tvContent.text = "${task.time} - ${task.title}"
+            holder.tvDescription.text = task.subtitle
+            holder.tvDescription.visibility = if (task.subtitle.isEmpty()) View.GONE else View.VISIBLE
         }
 
         override fun getItemCount() = tasks.size
