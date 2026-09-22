@@ -26,7 +26,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Welcome Back"
-            android:textColor="@color/white"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="20sp"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="48dp" />
@@ -37,7 +37,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Email"
-            android:background="#1E1E1E"
+            app:boxBackgroundColor="?attr/colorSurfaceContainer"
             app:boxStrokeColor="@color/app_secondary"
             app:hintTextColor="@color/app_secondary">
 
@@ -47,7 +47,7 @@
                 android:layout_height="wrap_content"
                 android:inputType="textEmailAddress"
                 android:maxLines="1"
-                android:textColor="@color/white" />
+                android:textColor="?attr/colorOnSurface" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -57,10 +57,11 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:hint="Password"
-            android:background="#1E1E1E"
+            app:boxBackgroundColor="?attr/colorSurfaceContainer"
             app:boxStrokeColor="@color/app_secondary"
             app:hintTextColor="@color/app_secondary"
-            app:endIconMode="password_toggle">
+            app:endIconMode="password_toggle"
+            app:endIconTint="?attr/colorOnSurfaceVariant">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_password"
@@ -68,7 +69,7 @@
                 android:layout_height="wrap_content"
                 android:inputType="textPassword"
                 android:maxLines="1"
-                android:textColor="@color/white" />
+                android:textColor="?attr/colorOnSurface" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.button.MaterialButton

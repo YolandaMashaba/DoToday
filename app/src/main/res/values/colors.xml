@@ -9,16 +9,24 @@
     <color name="app_secondary">#2196F3</color>
     <color name="app_accent">#F9A825</color>
 
-    <!-- Background and Surface Colors (As currently mapped) -->
-    <color name="theme_bg_dark">#1E1E1E</color>
-    <color name="theme_surface_dark">#424242</color>
+    <!-- Theme Colors -->
+    <color name="theme_bg_dark">#121212</color>
+    <color name="theme_surface_dark">#1E1E1E</color>
+    <color name="theme_surface_container_dark">#2C2C2C</color>
 
-    <color name="theme_bg_light">#FFFFFFFF</color>
-    <color name="theme_surface_light">#FFFFFFFF</color>
+    <color name="theme_bg_light">#F8F9FA</color>
+    <color name="theme_surface_light">#FFFFFF</color>
+    <color name="theme_surface_container_light">#F0F4F8</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary_light">#1C1B1F</color>
+    <color name="text_secondary_light">#49454F</color>
+    <color name="text_primary_dark">#FFFFFF</color>
+    <color name="text_secondary_dark">#CAC4D0</color>
 
     <!-- Specific Component Colors -->
     <color name="timeline_line_color">#2196F3</color>
-    <color name="inbox_button_background">#3E2723</color>
+    <color name="inbox_button_background">#1565C0</color>
     <color name="text_hint_color">#888888</color>
-    <color name="text_secondary_color">#BBBBBB</color>
+    <color name="text_secondary_color">#888888</color>
 </resources>

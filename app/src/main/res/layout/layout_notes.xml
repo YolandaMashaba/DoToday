@@ -24,7 +24,8 @@
         android:gravity="top"
         android:hint="Write your notes here..."
         android:background="@null"
-        android:textColor="@color/white"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?attr/colorOnSurfaceVariant"
         android:importantForAutofill="no" />
 
 </LinearLayout>

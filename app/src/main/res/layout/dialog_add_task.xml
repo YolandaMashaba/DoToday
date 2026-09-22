@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/theme_surface_dark"
+    android:background="?attr/colorSurface"
     android:orientation="vertical"
     android:padding="24dp">
 
@@ -12,7 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="New Schedule Task"
-        android:textColor="@color/white"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -22,15 +22,16 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:hint="Task Title"
-        android:textColorHint="@color/text_secondary_color"
-        app:hintTextColor="@color/white"
+        android:textColorHint="?attr/colorOnSurfaceVariant"
+        app:boxBackgroundColor="?attr/colorSurfaceContainer"
+        app:hintTextColor="@color/app_secondary"
         app:boxStrokeColor="@color/app_secondary">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/et_task_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
+            android:textColor="?attr/colorOnSurface"
             android:textCursorDrawable="@null" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -40,15 +41,16 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:hint="Description (Optional)"
-        android:textColorHint="@color/text_secondary_color"
-        app:hintTextColor="@color/white"
+        android:textColorHint="?attr/colorOnSurfaceVariant"
+        app:boxBackgroundColor="?attr/colorSurfaceContainer"
+        app:hintTextColor="@color/app_secondary"
         app:boxStrokeColor="@color/app_secondary">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/et_task_description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
+            android:textColor="?attr/colorOnSurface"
             android:textCursorDrawable="@null" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -93,8 +95,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="Min"
-            android:textColorHint="@color/text_secondary_color"
-            app:hintTextColor="@color/white"
+            android:textColorHint="?attr/colorOnSurfaceVariant"
+            app:boxBackgroundColor="?attr/colorSurfaceContainer"
+            app:hintTextColor="@color/app_secondary"
             app:boxStrokeColor="@color/app_secondary">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -102,7 +105,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="number"
-                android:textColor="@color/white"
+                android:textColor="?attr/colorOnSurface"
                 android:textCursorDrawable="@null"
                 android:padding="8dp"/>
         </com.google.android.material.textfield.TextInputLayout>

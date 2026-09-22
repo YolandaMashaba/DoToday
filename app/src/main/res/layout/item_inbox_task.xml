@@ -15,7 +15,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:tint="@color/text_hint_color"
+        app:tint="?attr/colorOnSurfaceVariant"
         android:contentDescription="Checkbox" />
 
     <LinearLayout
@@ -32,7 +32,7 @@
             android:id="@+id/tv_task_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="16sp"
             android:textStyle="bold"
             tools:text="Buy groceries" />
@@ -41,7 +41,7 @@
             android:id="@+id/tv_task_description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/text_secondary_color"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             android:visibility="gone"
             tools:text="Milk, eggs, bread"

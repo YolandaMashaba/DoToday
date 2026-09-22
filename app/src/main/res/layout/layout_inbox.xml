@@ -13,7 +13,7 @@
         android:text="Inbox"
         android:textSize="32sp"
         android:textStyle="bold"
-        android:textColor="@color/white"
+        android:textColor="?attr/colorOnSurface"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginTop="32dp" />
@@ -59,7 +59,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="My Disorganised Thoughts"
-            android:textColor="@color/white"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -71,7 +71,7 @@
             android:paddingStart="32dp"
             android:paddingEnd="32dp"
             android:text="Capture tasks and thoughts as they come. Move them to your timeline when you're ready to schedule."
-            android:textColor="@color/text_secondary_color"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp" />
 
         <com.google.android.material.button.MaterialButton
@@ -79,7 +79,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
-            android:backgroundTint="@color/inbox_button_background"
+            android:backgroundTint="?attr/colorSurfaceContainer"
             android:paddingStart="24dp"
             android:paddingEnd="24dp"
             android:text="+ New Inbox Task"
@@ -94,7 +94,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:backgroundTint="@color/inbox_button_background"
+        android:backgroundTint="?attr/colorSurfaceContainer"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
         android:text="+ New Inbox Task"
