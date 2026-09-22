@@ -27,7 +27,6 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
 import android.content.Intent
-import android.util.Log
 
 /**
  * Main activity of the DoToday app.
