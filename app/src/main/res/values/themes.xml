@@ -23,6 +23,7 @@
 
     <style name="Theme.DoToday" parent="Base.Theme.DoToday" />
 
+
     <style name="ShapeAppearance.DoToday.Circle" parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerSize">50%</item>
     </style>

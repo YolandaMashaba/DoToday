@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
@@ -13,7 +14,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DoToday">
-        <!-- Login is now the launcher -->
+
+        <!-- Launcher activity -->
         <activity
             android:name=".LoginActivity"
             android:exported="true"
@@ -25,15 +27,19 @@
         </activity>
 
         <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".RegisterActivity"
             android:exported="false"
             android:theme="@style/Theme.DoToday" />
 
-        <!-- Main dashboard — no longer the launcher -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:theme="@style/Theme.DoToday" />
+
     </application>
 
 </manifest>
