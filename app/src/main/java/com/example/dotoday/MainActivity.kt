@@ -57,7 +57,9 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             Log.v(TAG, "WindowInsets received: top=${systemBars.top}, left=${systemBars.left}, right=${systemBars.right}")
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            if (v.paddingLeft != systemBars.left || v.paddingTop != systemBars.top || v.paddingRight != systemBars.right) {
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            }
             insets
         }
 
@@ -157,8 +159,8 @@ class MainActivity : AppCompatActivity() {
             }
             .show()
 
-        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setTextColor(getColor(R.color.app_secondary))
-        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(getColor(R.color.text_secondary_color))
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(getColor(R.color.app_secondary))
+        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(getColor(R.color.text_secondary_color))
     }
 
     /**
@@ -327,8 +329,8 @@ class MainActivity : AppCompatActivity() {
             }
             .show()
 
-        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setTextColor(getColor(R.color.app_secondary))
-        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(getColor(R.color.text_secondary_color))
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(getColor(R.color.app_secondary))
+        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(getColor(R.color.text_secondary_color))
     }
 
     /**
