@@ -1,6 +1,7 @@
 package com.example.dotoday
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,18 +27,36 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
 
+/**
+ * Main activity of the DoToday app.
+ *
+ * Manages the primary navigation sections:
+ * - Timeline view (scheduled daily tasks)
+ * - Calendar header week picker
+ * - Inbox view (synced with Todoist REST API)
+ * - Notes section
+ * - Settings section
+ */
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 
     private val todoistRepository = TodoistRepository()
     private lateinit var inboxAdapter: InboxAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "onCreate() called - initializing Edge-to-Edge and view hierarchy")
+        
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        
+
+        // Handle System Bar Insets gracefully for Edge-to-Edge display without double-padding BottomNavigationView
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            Log.v(TAG, "WindowInsets received: top=${systemBars.top}, left=${systemBars.left}, right=${systemBars.right}")
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
@@ -48,23 +67,31 @@ class MainActivity : AppCompatActivity() {
         setupBottomNav()
 
         findViewById<FloatingActionButton>(R.id.fab_add_task).setOnClickListener {
+            Log.d(TAG, "FAB clicked - opening add scheduled task dialog")
             showAddTaskDialog(adapter)
         }
 
         findViewById<View>(R.id.btn_new_inbox_task).setOnClickListener {
+            Log.d(TAG, "New Inbox Task button clicked")
             showAddTodoistTaskDialog()
         }
 
         findViewById<View>(R.id.btn_new_inbox_task_bottom).setOnClickListener {
+            Log.d(TAG, "New Inbox Task bottom button clicked")
             showAddTodoistTaskDialog()
         }
 
         findViewById<View>(R.id.btn_logout).setOnClickListener {
+            Log.d(TAG, "Logout button clicked")
             Snackbar.make(it, "Logged out successfully!", Snackbar.LENGTH_SHORT).show()
         }
     }
 
+    /**
+     * Displays a dialog allowing the user to create and add a new scheduled task to the timeline.
+     */
     private fun showAddTaskDialog(adapter: TimelineAdapter) {
+        Log.d(TAG, "showAddTaskDialog() displayed")
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_task, null)
         val etTitle = dialogView.findViewById<TextInputEditText>(R.id.et_task_title)
         val etDescription = dialogView.findViewById<TextInputEditText>(R.id.et_task_description)
@@ -89,6 +116,7 @@ class MainActivity : AppCompatActivity() {
             if (endCal.before(startCal)) endCal.add(Calendar.DAY_OF_YEAR, 1)
             val diff = (endCal.timeInMillis - startCal.timeInMillis) / (60 * 1000)
             etDuration.setText(diff.toString())
+            Log.v(TAG, "Updated task duration: $diff minutes")
         }
 
         btnPickTime.setOnClickListener {
@@ -118,18 +146,26 @@ class MainActivity : AppCompatActivity() {
                 if (title.isNotEmpty()) {
                     val startTime = String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute)
                     val endTime = String.format(Locale.getDefault(), "%02d:%02d", endHour, endMinute)
+                    Log.i(TAG, "Adding new timeline item: title='$title', time=$startTime-$endTime")
                     adapter.addItem(TimelineItem(startTime, endTime, title, description, R.drawable.ic_alarm))
+                } else {
+                    Log.w(TAG, "Task creation skipped - title was empty")
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton("Cancel") { _, _ ->
+                Log.d(TAG, "Add task dialog cancelled")
+            }
             .show()
 
         dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setTextColor(getColor(R.color.app_secondary))
         dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(getColor(R.color.text_secondary_color))
     }
 
-
+    /**
+     * Populates the top horizontal scrollable week calendar view with days.
+     */
     private fun setupCalendar() {
+        Log.d(TAG, "setupCalendar() - inflating week days into calendar container")
         val container = findViewById<LinearLayout>(R.id.calendar_container)
         val days = listOf("Mon" to "17", "Tue" to "18", "Wed" to "19", "Thu" to "20", "Fri" to "21", "Sat" to "22", "Sun" to "23")
         
@@ -148,7 +184,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Initializes the RecyclerView for the main daily timeline view with default sample tasks.
+     */
     private fun setupTimeline(): TimelineAdapter {
+        Log.d(TAG, "setupTimeline() - initializing timeline RecyclerView")
         val rv = findViewById<RecyclerView>(R.id.rv_timeline)
         rv.layoutManager = LinearLayoutManager(this)
         val adapter = TimelineAdapter(mutableListOf(
@@ -162,7 +202,11 @@ class MainActivity : AppCompatActivity() {
         return adapter
     }
 
+    /**
+     * Configures bottom navigation bar click behavior and section visibility.
+     */
     private fun setupBottomNav() {
+        Log.d(TAG, "setupBottomNav() - configuring navigation listener")
         val nav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         nav.selectedItemId = R.id.nav_timeline
         nav.setOnItemSelectedListener { item ->
@@ -171,7 +215,9 @@ class MainActivity : AppCompatActivity() {
             val layoutInbox = findViewById<View>(R.id.layout_inbox)
             val layoutSettings = findViewById<View>(R.id.layout_settings)
             
-            // Hide all
+            Log.d(TAG, "Navigation item selected: ${item.title}")
+
+            // Hide all sections first
             rvTimeline.visibility = View.GONE
             layoutNotes.visibility = View.GONE
             layoutInbox.visibility = View.GONE
@@ -203,14 +249,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Initializes the RecyclerView adapter for the Todoist Inbox section.
+     */
     private fun setupInbox() {
+        Log.d(TAG, "setupInbox() - configuring Inbox RecyclerView")
         val rv = findViewById<RecyclerView>(R.id.rv_inbox)
         rv.layoutManager = LinearLayoutManager(this)
         inboxAdapter = InboxAdapter(mutableListOf())
         rv.adapter = inboxAdapter
     }
 
+    /**
+     * Asynchronously fetches Todoist tasks using [lifecycleScope] and updates UI states.
+     */
     private fun fetchTodoistTasks() {
+        Log.d(TAG, "fetchTodoistTasks() called - initiating network request")
         val pb = findViewById<ProgressBar>(R.id.pb_inbox_loading)
         val rv = findViewById<RecyclerView>(R.id.rv_inbox)
         val emptyState = findViewById<View>(R.id.layout_inbox_empty)
@@ -226,6 +280,7 @@ class MainActivity : AppCompatActivity() {
             pb.visibility = View.GONE
             
             result.onSuccess { tasks ->
+                Log.i(TAG, "fetchTodoistTasks() successful - retrieved ${tasks.size} task(s)")
                 if (tasks.isEmpty()) {
                     emptyState.visibility = View.VISIBLE
                 } else {
@@ -234,18 +289,23 @@ class MainActivity : AppCompatActivity() {
                     btnBottom.visibility = View.VISIBLE
                 }
             }.onFailure { error ->
+                Log.e(TAG, "fetchTodoistTasks() failed: ${error.localizedMessage}", error)
                 emptyState.visibility = View.VISIBLE
                 Snackbar.make(rv, "Failed to fetch tasks: ${error.message}", Snackbar.LENGTH_LONG).show()
             }
         }
     }
 
+    /**
+     * Displays a dialog tailored for creating a new unscheduled Todoist Inbox task.
+     */
     private fun showAddTodoistTaskDialog() {
+        Log.d(TAG, "showAddTodoistTaskDialog() displayed")
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_task, null)
         val etTitle = dialogView.findViewById<TextInputEditText>(R.id.et_task_title)
         val etDescription = dialogView.findViewById<TextInputEditText>(R.id.et_task_description)
         
-        // Hide time and duration for Todoist Inbox tasks
+        // Hide time and duration layout for Todoist Inbox tasks
         dialogView.findViewById<View>(R.id.layout_time_duration)?.visibility = View.GONE
         dialogView.findViewById<TextView>(R.id.tv_dialog_title)?.text = "New Inbox Task"
 
@@ -256,23 +316,34 @@ class MainActivity : AppCompatActivity() {
                 val title = etTitle.text.toString()
                 val description = etDescription.text.toString()
                 if (title.isNotEmpty()) {
+                    Log.i(TAG, "Creating new Todoist task: title='$title'")
                     addNewTodoistTask(title, description)
+                } else {
+                    Log.w(TAG, "Todoist task creation skipped - title was empty")
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton("Cancel") { _, _ ->
+                Log.d(TAG, "New Inbox task dialog cancelled")
+            }
             .show()
 
         dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setTextColor(getColor(R.color.app_secondary))
         dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(getColor(R.color.text_secondary_color))
     }
 
+    /**
+     * Sends a network request to create a new task in Todoist.
+     */
     private fun addNewTodoistTask(title: String, description: String? = null) {
+        Log.d(TAG, "addNewTodoistTask() - sending task creation request")
         lifecycleScope.launch {
             val result = todoistRepository.addTask(title, description)
-            result.onSuccess {
+            result.onSuccess { newTask ->
+                Log.i(TAG, "addNewTodoistTask() succeeded - ID='${newTask.id}'")
                 fetchTodoistTasks() // Refresh list
                 Snackbar.make(findViewById(R.id.main), "Task added to Todoist", Snackbar.LENGTH_SHORT).show()
             }.onFailure { error ->
+                Log.e(TAG, "addNewTodoistTask() failed: ${error.localizedMessage}", error)
                 Snackbar.make(findViewById(R.id.main), "Failed to add task: ${error.message}", Snackbar.LENGTH_LONG).show()
             }
         }
@@ -280,9 +351,13 @@ class MainActivity : AppCompatActivity() {
 
     data class TimelineItem(val time: String, val endTime: String, val title: String, val subtitle: String, val iconRes: Int)
 
+    /**
+     * RecyclerView adapter for displaying list of tasks retrieved from Todoist Inbox.
+     */
     class InboxAdapter(private val tasks: MutableList<TodoistTask>) : RecyclerView.Adapter<InboxAdapter.ViewHolder>() {
 
         fun updateTasks(newTasks: List<TodoistTask>) {
+            Log.d("InboxAdapter", "updateTasks() - updating data set with ${newTasks.size} items")
             tasks.clear()
             tasks.addAll(newTasks)
             notifyDataSetChanged()
@@ -307,12 +382,17 @@ class MainActivity : AppCompatActivity() {
         override fun getItemCount() = tasks.size
     }
 
+    /**
+     * RecyclerView adapter for displaying timeline task entries.
+     */
     class TimelineAdapter(private val items: MutableList<TimelineItem>) : RecyclerView.Adapter<TimelineAdapter.ViewHolder>() {
 
         fun addItem(item: TimelineItem) {
+            Log.d("TimelineAdapter", "addItem() - adding timeline item: '${item.title}'")
             items.add(item)
             notifyItemInserted(items.size - 1)
         }
+
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val tvTime: TextView = view.findViewById(R.id.tv_time)
             val tvTitle: TextView = view.findViewById(R.id.tv_title)
