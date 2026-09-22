@@ -14,6 +14,14 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 
+/**
+ * Registration screen for new users creating an account in DoToday.
+ *
+ * Key Responsibilities:
+ * - Edge-to-Edge window inset handling targeting root ScrollView ([R.id.main]).
+ * - Thorough client-side input validation (email structure, min 8-char password, password confirmation match).
+ * - Navigation back to [LoginActivity] or advancing directly to [MainActivity].
+ */
 class RegisterActivity : AppCompatActivity() {
 
     private lateinit var tilEmail: TextInputLayout
@@ -27,21 +35,23 @@ class RegisterActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "onCreate() - Initializing RegisterActivity UI and Edge-to-Edge insets")
+
+        // Enable edge-to-edge window drawing
         enableEdgeToEdge()
         setContentView(R.layout.activity_register)
-        Log.d(TAG, "RegisterActivity created")
 
-        findViewById<View>(android.R.id.content)?.let { root ->
+        // Apply system window bar insets to root ScrollView (R.id.main)
+        findViewById<View>(R.id.main)?.let { root ->
             ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                if (v.paddingLeft != systemBars.left || v.paddingTop != systemBars.top || v.paddingRight != systemBars.right || v.paddingBottom != systemBars.bottom) {
-                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-                }
+                Log.v(TAG, "Applying SystemBars insets: top=${systemBars.top}, bottom=${systemBars.bottom}")
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
                 insets
             }
         }
 
-        // Bind views
+        // Bind layout views
         tilEmail = findViewById(R.id.til_email)
         tilPassword = findViewById(R.id.til_password)
         tilConfirmPassword = findViewById(R.id.til_confirm_password)
@@ -51,56 +61,74 @@ class RegisterActivity : AppCompatActivity() {
         btnRegister = findViewById(R.id.btn_register)
         btnGoToLogin = findViewById(R.id.btn_go_to_login)
 
-        btnRegister.setOnClickListener { attemptRegister() }
+        btnRegister.setOnClickListener {
+            Log.d(TAG, "Register button clicked - executing attemptRegister()")
+            attemptRegister()
+        }
 
         btnGoToLogin.setOnClickListener {
-            Log.d(TAG, "Returning to LoginActivity")
+            Log.i(TAG, "Returning to LoginActivity from RegisterActivity")
             finish()
         }
     }
 
     /**
-     * Validates all fields, then simulates registration.
-     * Firebase call will be added in the next step.
+     * Performs multi-step form validation:
+     * 1. Email is required and must match valid email syntax.
+     * 2. Password must contain at least 8 characters.
+     * 3. Confirm password input must match the password input.
      */
     private fun attemptRegister() {
         val email = etEmail.text?.toString()?.trim() ?: ""
         val password = etPassword.text?.toString() ?: ""
         val confirm = etConfirmPassword.text?.toString() ?: ""
 
-        // Reset errors
+        // Reset previous form field errors
         tilEmail.error = null
         tilPassword.error = null
         tilConfirmPassword.error = null
 
-        // --- Validation ---
+        // Email validation
         if (email.isEmpty()) {
             tilEmail.error = "Email is required"
+            Log.w(TAG, "Register validation failed: email is empty")
             return
         }
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             tilEmail.error = "Enter a valid email address"
+            Log.w(TAG, "Register validation failed: invalid email format '$email'")
             return
         }
+
+        // Password length validation
         if (password.length < 8) {
             tilPassword.error = "Password must be at least 8 characters"
+            Log.w(TAG, "Register validation failed: password length < 8")
             return
         }
+
+        // Password match validation
         if (password != confirm) {
             tilConfirmPassword.error = "Passwords do not match"
+            Log.w(TAG, "Register validation failed: passwords do not match")
             return
         }
 
-        Log.d(TAG, "Input valid. Registering $email")
+        Log.i(TAG, "Registration validation succeeded for account: '$email'")
 
-        // TODO: Replace with Firebase Auth call in the next step.
+        // Simulation placeholder for backend registration logic
         Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show()
         goToMain()
     }
 
+    /**
+     * Navigates to [MainActivity] and clears the task back stack.
+     */
     private fun goToMain() {
-        val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        Log.i(TAG, "Transitioning from RegisterActivity to MainActivity")
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
         startActivity(intent)
         finish()
     }

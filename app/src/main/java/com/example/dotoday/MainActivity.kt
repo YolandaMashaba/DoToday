@@ -31,14 +31,15 @@ import java.util.Calendar
 import java.util.Locale
 
 /**
- * Main activity of the DoToday app.
+ * Main Activity dashboard for DoToday.
  *
- * Manages the primary navigation sections:
- * - Timeline view (scheduled daily tasks with expandable calendar date selection, calendar pop-up dialog, repeat options, and interval features)
- * - Calendar header week picker & calendar edit pop-up
- * - Inbox view (synced with Todoist REST API)
- * - Notes section
- * - Settings section
+ * Manages the primary navigation sections and core feature modules:
+ * 1. **Timeline View**: Renders daily scheduled tasks and time interval rulers via [TimelineAdapter].
+ * 2. **Week Calendar Picker**: Interactive horizontal scroll view allowing date selection and task indicator dots.
+ * 3. **Calendar Dialog Overview**: Full Month Calendar dialog powered by [CalendarView] for selecting target dates.
+ * 4. **Inbox Section**: Asynchronously fetches and creates tasks via [TodoistRepository] (synced with Todoist REST API v2).
+ * 5. **Notes & Settings**: Placeholder layouts accessible through the bottom navigation bar.
+ * 6. **Edge-to-Edge System Bars Insets**: Safely handles WindowInsets on the root layout [R.id.main].
  */
 class MainActivity : AppCompatActivity() {
 
@@ -46,8 +47,20 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "MainActivity"
     }
 
+    /**
+     * Model holding display info for each date entry in the horizontal week picker header.
+     *
+     * @property name Abbreviated day name (e.g., "Sun", "Mon").
+     * @property fullName Formatted date header text (e.g., "22 September 2026 >").
+     * @property number String representation of the day of the month (e.g., "22").
+     */
     data class DayInfo(val name: String, val fullName: String, val number: String)
 
+    /**
+     * Sealed class representing heterogeneous items in the Timeline RecyclerView:
+     * - [Task]: Individual scheduled task item with completion toggle, repeat flags, and icons.
+     * - [Interval]: Time ruler block displaying duration countdowns and inline add action.
+     */
     sealed class TimelineEntry {
         data class Task(
             val id: String = java.util.UUID.randomUUID().toString(),
@@ -67,6 +80,7 @@ class MainActivity : AppCompatActivity() {
         ) : TimelineEntry()
     }
 
+    // Static calendar week list spanning 20 - 26 September 2026
     private val daysList = listOf(
         DayInfo("Sun", "20 September 2026 >", "20"),
         DayInfo("Mon", "21 September 2026 >", "21"),
@@ -81,6 +95,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var timelineAdapter: TimelineAdapter
     private val dayViewsMap = mutableMapOf<String, Pair<View, TextView>>()
 
+    // In-memory data store holding timeline entries keyed by day number
     private val tasksByDay = mutableMapOf<String, MutableList<TimelineEntry>>(
         "20" to mutableListOf(
             TimelineEntry.Task("1", "07:30", "08:00", "Morning Meditation", "15 mins focus", R.drawable.ic_alarm),
@@ -124,67 +139,85 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d(TAG, "onCreate() called - initializing Edge-to-Edge and view hierarchy")
-        
+        Log.d(TAG, "onCreate() - Initializing MainActivity view hierarchy")
+
+        // Enable edge-to-edge window drawing
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            if (v.paddingLeft != systemBars.left || v.paddingTop != systemBars.top || v.paddingRight != systemBars.right) {
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+        // Apply system bar insets to root view (R.id.main) cleanly to avoid layout loops
+        findViewById<View>(R.id.main)?.let { root ->
+            ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                Log.v(TAG, "Applying SystemBars insets: top=${systemBars.top}, bottom=${systemBars.bottom}")
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                insets
             }
-            insets
         }
 
+        // Initialize core component sections
         setupTimeline()
         setupCalendar()
         setupInbox()
         setupBottomNav()
 
+        // Set up header calendar button click listener
         findViewById<View>(R.id.btn_calendar_picker)?.setOnClickListener {
-            Log.d(TAG, "Calendar icon clicked - opening calendar dialog overview")
+            Log.d(TAG, "Calendar overview icon clicked - displaying calendar picker dialog")
             showCalendarPickerDialog()
         }
 
+        // Set up Floating Action Button (FAB) click listener
         findViewById<FloatingActionButton>(R.id.fab_add_task).setOnClickListener {
-            Log.d(TAG, "FAB clicked - opening add scheduled task dialog")
+            Log.d(TAG, "FAB clicked - displaying add scheduled task dialog")
             showAddTaskDialog()
         }
 
+        // Set up inbox add task buttons
         findViewById<View>(R.id.btn_new_inbox_task).setOnClickListener {
+            Log.d(TAG, "New Inbox Task button clicked")
             showAddTodoistTaskDialog()
         }
 
         findViewById<View>(R.id.btn_new_inbox_task_bottom).setOnClickListener {
+            Log.d(TAG, "New Inbox Task bottom button clicked")
             showAddTodoistTaskDialog()
         }
 
+        // Handle user logout action
         findViewById<View>(R.id.btn_logout).setOnClickListener {
+            Log.i(TAG, "User initiated logout - redirecting to LoginActivity")
             Snackbar.make(it, "Logged out successfully!", Snackbar.LENGTH_SHORT).show()
-            val intent = Intent(this, LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            val intent = Intent(this, LoginActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
             startActivity(intent)
             finish()
         }
     }
 
+    /**
+     * Helper function to format current system time in HH:mm standard format.
+     */
     private fun getCurrentTimeFormatted(): String {
         val cal = Calendar.getInstance()
         return String.format(Locale.getDefault(), "%02d:%02d", cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
     }
 
+    /**
+     * Initializes the Timeline RecyclerView and attaches [TimelineAdapter].
+     */
     private fun setupTimeline(): TimelineAdapter {
-        Log.d(TAG, "setupTimeline() - initializing timeline RecyclerView")
+        Log.d(TAG, "setupTimeline() - Initializing timeline RecyclerView for day '$selectedDayNumber'")
         val rv = findViewById<RecyclerView>(R.id.rv_timeline)
         rv.layoutManager = LinearLayoutManager(this)
-        
+
         val initialEntries = tasksByDay[selectedDayNumber] ?: mutableListOf()
         timelineAdapter = TimelineAdapter(
             items = initialEntries.toMutableList(),
             onAddTaskClicked = { showAddTaskDialog() },
             onTaskToggleCompleted = { task ->
-                Log.d(TAG, "Task '${task.title}' toggled completed: ${task.isCompleted}")
+                Log.i(TAG, "Task '${task.title}' completion status updated: isCompleted=${task.isCompleted}")
                 timelineAdapter.notifyDataSetChanged()
             }
         )
@@ -192,8 +225,11 @@ class MainActivity : AppCompatActivity() {
         return timelineAdapter
     }
 
+    /**
+     * Inflates and populates the horizontal week calendar header picker.
+     */
     private fun setupCalendar() {
-        Log.d(TAG, "setupCalendar() - inflating week days into calendar container")
+        Log.d(TAG, "setupCalendar() - Populating horizontal week days calendar view")
         val container = findViewById<LinearLayout>(R.id.calendar_container)
         container.removeAllViews()
         dayViewsMap.clear()
@@ -207,20 +243,26 @@ class MainActivity : AppCompatActivity() {
 
             dayViewsMap[dayInfo.number] = Pair(view, tvNumber)
 
+            // Render dot indicators for tasks on this day
             updateDayDots(dayInfo.number, view)
 
             view.setOnClickListener {
+                Log.d(TAG, "Calendar day clicked: ${dayInfo.fullName}")
                 selectCalendarDay(dayInfo, animate = true)
             }
 
             container.addView(view)
         }
 
+        // Set default selected day highlight
         daysList.find { it.number == selectedDayNumber }?.let { defaultDay ->
             selectCalendarDay(defaultDay, animate = false)
         }
     }
 
+    /**
+     * Updates indicator dots on calendar day items based on task counts.
+     */
     private fun updateDayDots(dayNumber: String, dayView: View) {
         val entries = tasksByDay[dayNumber] ?: emptyList()
         val tasksCount = entries.count { it is TimelineEntry.Task }
@@ -243,12 +285,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Switches the active timeline date view to [dayInfo].
+     */
     private fun selectCalendarDay(dayInfo: DayInfo, animate: Boolean) {
         selectedDayNumber = dayInfo.number
-        Log.d(TAG, "selectCalendarDay() - selected day: ${dayInfo.fullName}")
+        Log.i(TAG, "selectCalendarDay() - Active date set to '${dayInfo.fullName}'")
 
         findViewById<TextView>(R.id.tv_month_year)?.text = dayInfo.fullName
 
+        // Update styling highlights for selected vs unselected days
         dayViewsMap.forEach { (number, pair) ->
             val (view, tvNumber) = pair
             if (number == dayInfo.number) {
@@ -272,6 +318,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Update timeline adapter items
         val entries = tasksByDay[dayInfo.number] ?: mutableListOf()
         timelineAdapter.updateEntries(entries)
 
@@ -280,6 +327,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Resolves theme color attribute value.
+     */
     private fun getThemeColor(attr: Int): Int {
         val typedValue = TypedValue()
         theme.resolveAttribute(attr, typedValue, true)
@@ -287,10 +337,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Displays a calendar pop-up dialog showing a full calendar and tasks preview for any selected date.
+     * Displays an interactive dialog containing a full [CalendarView] month picker.
      */
     private fun showCalendarPickerDialog() {
-        Log.d(TAG, "showCalendarPickerDialog() displayed")
+        Log.d(TAG, "showCalendarPickerDialog() - Displaying Month Calendar Overview")
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_calendar_picker, null)
         val calendarView = dialogView.findViewById<CalendarView>(R.id.calendar_view_pop)
         val tvHeader = dialogView.findViewById<TextView>(R.id.tv_tasks_summary_header)
@@ -322,7 +372,7 @@ class MainActivity : AppCompatActivity() {
             cal.set(2026, Calendar.SEPTEMBER, dialogSelectedDayNumber.toIntOrNull() ?: 22)
             calendarView.date = cal.timeInMillis
         } catch (e: Exception) {
-            Log.w(TAG, "Error setting calendar date: ${e.message}")
+            Log.w(TAG, "Error configuring initial calendar dialog date: ${e.message}")
         }
 
         updateDialogTaskPreview(dialogSelectedDayNumber, dialogSelectedFullName)
@@ -332,6 +382,7 @@ class MainActivity : AppCompatActivity() {
             val monthNames = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
             val monthName = monthNames.getOrElse(month) { "September" }
             dialogSelectedFullName = "$dayOfMonth $monthName $year >"
+            Log.d(TAG, "Calendar picker date changed: $dialogSelectedFullName")
             updateDialogTaskPreview(dialogSelectedDayNumber, dialogSelectedFullName)
         }
 
@@ -351,8 +402,11 @@ class MainActivity : AppCompatActivity() {
         dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(getColor(R.color.text_secondary_color))
     }
 
+    /**
+     * Displays dialog for scheduling new timeline tasks with duration calculation and repeat support.
+     */
     private fun showAddTaskDialog() {
-        Log.d(TAG, "showAddTaskDialog() displayed")
+        Log.d(TAG, "showAddTaskDialog() - Displaying Add Task Dialog")
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_task, null)
         val etTitle = dialogView.findViewById<TextInputEditText>(R.id.et_task_title)
         val etDescription = dialogView.findViewById<TextInputEditText>(R.id.et_task_description)
@@ -360,7 +414,7 @@ class MainActivity : AppCompatActivity() {
         val btnPickTime = dialogView.findViewById<MaterialButton>(R.id.btn_pick_time)
         val btnPickEndTime = dialogView.findViewById<MaterialButton>(R.id.btn_pick_end_time)
 
-        // Repeat controls
+        // Repeat configuration views
         val switchRepeat = dialogView.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.switch_repeat_task)
         val layoutRepeatDetails = dialogView.findViewById<View>(R.id.layout_repeat_details)
         val spinnerFrequency = dialogView.findViewById<android.widget.AutoCompleteTextView>(R.id.spinner_repeat_frequency)
@@ -416,7 +470,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Add") { _, _ ->
                 val title = etTitle.text.toString()
                 val description = etDescription.text.toString()
-                
+
                 if (title.isNotEmpty()) {
                     val startTime = String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute)
                     val endTime = String.format(Locale.getDefault(), "%02d:%02d", endHour, endMinute)
@@ -434,6 +488,8 @@ class MainActivity : AppCompatActivity() {
                         targetDays.add(dayNum.toString())
                     }
 
+                    Log.i(TAG, "Adding new timeline task '$title' starting on day $selectedDayNumber (repeatCount=$repeatCount)")
+
                     targetDays.forEach { dayNum ->
                         val newTask = TimelineEntry.Task(
                             time = startTime,
@@ -444,7 +500,7 @@ class MainActivity : AppCompatActivity() {
                             isRepeat = isRepeat
                         )
                         val currentEntries = tasksByDay.getOrPut(dayNum) { mutableListOf() }
-                        
+
                         val lastIndex = currentEntries.indexOfLast { it is TimelineEntry.Task }
                         val insertIndex = if (lastIndex >= 0) lastIndex + 1 else currentEntries.size
                         currentEntries.add(insertIndex, newTask)
@@ -472,6 +528,9 @@ class MainActivity : AppCompatActivity() {
         dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(getColor(R.color.text_secondary_color))
     }
 
+    /**
+     * Configures section view switching via [BottomNavigationView].
+     */
     private fun setupBottomNav() {
         val nav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         nav.selectedItemId = R.id.nav_timeline
@@ -485,6 +544,8 @@ class MainActivity : AppCompatActivity() {
             layoutNotes.visibility = View.GONE
             layoutInbox.visibility = View.GONE
             layoutSettings.visibility = View.GONE
+
+            Log.d(TAG, "Bottom navigation item selected: ${item.title}")
 
             when(item.itemId) {
                 R.id.nav_timeline -> {
@@ -513,13 +574,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupInbox() {
+        Log.d(TAG, "setupInbox() - Initializing Inbox RecyclerView adapter")
         val rv = findViewById<RecyclerView>(R.id.rv_inbox)
         rv.layoutManager = LinearLayoutManager(this)
         inboxAdapter = InboxAdapter(mutableListOf())
         rv.adapter = inboxAdapter
     }
 
+    /**
+     * Fetches tasks from [TodoistRepository] inside [lifecycleScope].
+     */
     private fun fetchTodoistTasks() {
+        Log.d(TAG, "fetchTodoistTasks() - Requesting tasks from TodoistRepository")
         val pb = findViewById<ProgressBar>(R.id.pb_inbox_loading)
         val rv = findViewById<RecyclerView>(R.id.rv_inbox)
         val emptyState = findViewById<View>(R.id.layout_inbox_empty)
@@ -533,8 +599,9 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val result = todoistRepository.getTasks()
             pb.visibility = View.GONE
-            
+
             result.onSuccess { tasks ->
+                Log.i(TAG, "fetchTodoistTasks() succeeded with ${tasks.size} task(s)")
                 if (tasks.isEmpty()) {
                     emptyState.visibility = View.VISIBLE
                 } else {
@@ -543,6 +610,7 @@ class MainActivity : AppCompatActivity() {
                     btnBottom.visibility = View.VISIBLE
                 }
             }.onFailure { error ->
+                Log.e(TAG, "fetchTodoistTasks() failed: ${error.localizedMessage}", error)
                 emptyState.visibility = View.VISIBLE
                 Snackbar.make(rv, "Failed to fetch tasks: ${error.message}", Snackbar.LENGTH_LONG).show()
             }
@@ -550,10 +618,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showAddTodoistTaskDialog() {
+        Log.d(TAG, "showAddTodoistTaskDialog() - Displaying Add Inbox Task Dialog")
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_task, null)
         val etTitle = dialogView.findViewById<TextInputEditText>(R.id.et_task_title)
         val etDescription = dialogView.findViewById<TextInputEditText>(R.id.et_task_description)
-        
+
         dialogView.findViewById<View>(R.id.layout_time_duration)?.visibility = View.GONE
         dialogView.findViewById<View>(R.id.layout_repeat_section)?.visibility = View.GONE
         dialogView.findViewById<TextView>(R.id.tv_dialog_title)?.text = "New Inbox Task"
@@ -576,17 +645,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun addNewTodoistTask(title: String, description: String? = null) {
+        Log.i(TAG, "addNewTodoistTask() - Creating task content='$title'")
         lifecycleScope.launch {
             val result = todoistRepository.addTask(title, description)
             result.onSuccess {
                 fetchTodoistTasks()
                 Snackbar.make(findViewById(R.id.main), "Task added to Todoist", Snackbar.LENGTH_SHORT).show()
             }.onFailure { error ->
+                Log.e(TAG, "addNewTodoistTask() failed: ${error.localizedMessage}", error)
                 Snackbar.make(findViewById(R.id.main), "Failed to add task: ${error.message}", Snackbar.LENGTH_LONG).show()
             }
         }
     }
 
+    /**
+     * Adapter for rendering Todoist Inbox tasks in a RecyclerView.
+     */
     class InboxAdapter(private val tasks: MutableList<TodoistTask>) : RecyclerView.Adapter<InboxAdapter.ViewHolder>() {
 
         fun updateTasks(newTasks: List<TodoistTask>) {
@@ -614,6 +688,9 @@ class MainActivity : AppCompatActivity() {
         override fun getItemCount() = tasks.size
     }
 
+    /**
+     * Adapter for previewing tasks in the full Calendar dialog popup.
+     */
     class DialogTaskPreviewAdapter(private val tasks: List<TimelineEntry.Task>) : RecyclerView.Adapter<DialogTaskPreviewAdapter.ViewHolder>() {
 
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -635,6 +712,9 @@ class MainActivity : AppCompatActivity() {
         override fun getItemCount() = tasks.size
     }
 
+    /**
+     * Adapter for rendering heterogeneous timeline items ([TimelineEntry.Task] and [TimelineEntry.Interval]).
+     */
     class TimelineAdapter(
         private val items: MutableList<TimelineEntry>,
         private val onAddTaskClicked: () -> Unit,
@@ -649,15 +729,6 @@ class MainActivity : AppCompatActivity() {
         fun updateEntries(newEntries: List<TimelineEntry>) {
             items.clear()
             items.addAll(newEntries)
-            notifyDataSetChanged()
-        }
-
-        fun addTask(task: TimelineEntry.Task, fullList: MutableList<TimelineEntry>) {
-            val lastIndex = fullList.indexOfLast { it is TimelineEntry.Task }
-            val insertIndex = if (lastIndex >= 0) lastIndex + 1 else fullList.size
-            fullList.add(insertIndex, task)
-            items.clear()
-            items.addAll(fullList)
             notifyDataSetChanged()
         }
 
