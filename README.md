@@ -70,7 +70,7 @@ DoToday/
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/DoToday.git
+   git clone https://github.com/YolandaMashaba/DoToday.git
    cd DoToday
    ```
 2. **Open in Android Studio**:
