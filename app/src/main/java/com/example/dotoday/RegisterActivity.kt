@@ -4,8 +4,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
+import android.view.View
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -23,8 +27,19 @@ class RegisterActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_register)
         Log.d(TAG, "RegisterActivity created")
+
+        findViewById<View>(android.R.id.content)?.let { root ->
+            ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                if (v.paddingLeft != systemBars.left || v.paddingTop != systemBars.top || v.paddingRight != systemBars.right || v.paddingBottom != systemBars.bottom) {
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                }
+                insets
+            }
+        }
 
         // Bind views
         tilEmail = findViewById(R.id.til_email)
@@ -40,7 +55,7 @@ class RegisterActivity : AppCompatActivity() {
 
         btnGoToLogin.setOnClickListener {
             Log.d(TAG, "Returning to LoginActivity")
-            finish() // Go back to Login (which is already on the stack)
+            finish()
         }
     }
 

@@ -34,7 +34,7 @@ import java.util.Locale
  * Main activity of the DoToday app.
  *
  * Manages the primary navigation sections:
- * - Timeline view (scheduled daily tasks with expandable calendar date selection, calendar pop-up dialog, and interval features)
+ * - Timeline view (scheduled daily tasks with expandable calendar date selection, calendar pop-up dialog, repeat options, and interval features)
  * - Calendar header week picker & calendar edit pop-up
  * - Inbox view (synced with Todoist REST API)
  * - Notes section
@@ -360,6 +360,20 @@ class MainActivity : AppCompatActivity() {
         val btnPickTime = dialogView.findViewById<MaterialButton>(R.id.btn_pick_time)
         val btnPickEndTime = dialogView.findViewById<MaterialButton>(R.id.btn_pick_end_time)
 
+        // Repeat controls
+        val switchRepeat = dialogView.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.switch_repeat_task)
+        val layoutRepeatDetails = dialogView.findViewById<View>(R.id.layout_repeat_details)
+        val spinnerFrequency = dialogView.findViewById<android.widget.AutoCompleteTextView>(R.id.spinner_repeat_frequency)
+        val etRepeatDuration = dialogView.findViewById<TextInputEditText>(R.id.et_repeat_duration)
+
+        val frequencies = arrayOf("Daily", "Weekly", "Monthly")
+        val freqAdapter = android.widget.ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, frequencies)
+        spinnerFrequency.setAdapter(freqAdapter)
+
+        switchRepeat.setOnCheckedChangeListener { _, isChecked ->
+            layoutRepeatDetails.visibility = if (isChecked) View.VISIBLE else View.GONE
+        }
+
         var selectedHour = 8
         var selectedMinute = 0
         var endHour = 8
@@ -406,23 +420,49 @@ class MainActivity : AppCompatActivity() {
                 if (title.isNotEmpty()) {
                     val startTime = String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute)
                     val endTime = String.format(Locale.getDefault(), "%02d:%02d", endHour, endMinute)
-                    val newTask = TimelineEntry.Task(
-                        time = startTime,
-                        endTime = endTime,
-                        title = title,
-                        subtitle = description,
-                        iconRes = R.drawable.ic_alarm,
-                        isRepeat = true
-                    )
-                    
-                    val currentEntries = tasksByDay.getOrPut(selectedDayNumber) { mutableListOf() }
-                    timelineAdapter.addTask(newTask, currentEntries)
+                    val isRepeat = switchRepeat.isChecked
 
-                    dayViewsMap[selectedDayNumber]?.first?.let { dayView ->
-                        updateDayDots(selectedDayNumber, dayView)
+                    val startDayInt = selectedDayNumber.toIntOrNull() ?: 22
+                    val repeatCount = if (isRepeat) etRepeatDuration.text.toString().toIntOrNull() ?: 7 else 1
+                    val frequency = spinnerFrequency.text.toString()
+
+                    val step = if (frequency.equals("Weekly", ignoreCase = true)) 7 else 1
+                    val targetDays = mutableListOf<String>()
+
+                    for (i in 0 until repeatCount) {
+                        val dayNum = startDayInt + (i * step)
+                        targetDays.add(dayNum.toString())
                     }
 
-                    Snackbar.make(findViewById(R.id.main), "Task added to $selectedDayNumber", Snackbar.LENGTH_SHORT).show()
+                    targetDays.forEach { dayNum ->
+                        val newTask = TimelineEntry.Task(
+                            time = startTime,
+                            endTime = endTime,
+                            title = title,
+                            subtitle = description,
+                            iconRes = R.drawable.ic_alarm,
+                            isRepeat = isRepeat
+                        )
+                        val currentEntries = tasksByDay.getOrPut(dayNum) { mutableListOf() }
+                        
+                        val lastIndex = currentEntries.indexOfLast { it is TimelineEntry.Task }
+                        val insertIndex = if (lastIndex >= 0) lastIndex + 1 else currentEntries.size
+                        currentEntries.add(insertIndex, newTask)
+
+                        dayViewsMap[dayNum]?.first?.let { dayView ->
+                            updateDayDots(dayNum, dayView)
+                        }
+                    }
+
+                    val currentEntries = tasksByDay[selectedDayNumber] ?: mutableListOf()
+                    timelineAdapter.updateEntries(currentEntries)
+
+                    val snackbarMsg = if (isRepeat && repeatCount > 1) {
+                        "Task '$title' scheduled & repeated for $repeatCount ${if (frequency.equals("Weekly", ignoreCase = true)) "weeks" else "days"}!"
+                    } else {
+                        "Task '$title' added to day $selectedDayNumber"
+                    }
+                    Snackbar.make(findViewById(R.id.main), snackbarMsg, Snackbar.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -515,6 +555,7 @@ class MainActivity : AppCompatActivity() {
         val etDescription = dialogView.findViewById<TextInputEditText>(R.id.et_task_description)
         
         dialogView.findViewById<View>(R.id.layout_time_duration)?.visibility = View.GONE
+        dialogView.findViewById<View>(R.id.layout_repeat_section)?.visibility = View.GONE
         dialogView.findViewById<TextView>(R.id.tv_dialog_title)?.text = "New Inbox Task"
 
         val dialog = MaterialAlertDialogBuilder(this)

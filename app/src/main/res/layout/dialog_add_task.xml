@@ -111,4 +111,78 @@
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
 
+    <!-- Repeat Options Section -->
+    <LinearLayout
+        android:id="@+id/layout_repeat_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switch_repeat_task"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Repeat Task"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:thumbTint="@color/app_secondary"
+            app:trackTint="?attr/colorSurfaceContainer" />
+
+        <LinearLayout
+            android:id="@+id/layout_repeat_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <!-- Frequency Dropdown -->
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Frequency"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
+                app:boxBackgroundColor="?attr/colorSurfaceContainer"
+                app:boxStrokeColor="@color/app_secondary">
+
+                <AutoCompleteTextView
+                    android:id="@+id/spinner_repeat_frequency"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    android:text="Daily"
+                    android:textColor="?attr/colorOnSurface" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <View
+                android:layout_width="8dp"
+                android:layout_height="0dp" />
+
+            <!-- Duration Input -->
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="For (Count)"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
+                app:boxBackgroundColor="?attr/colorSurfaceContainer"
+                app:boxStrokeColor="@color/app_secondary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_repeat_duration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:text="7"
+                    android:textColor="?attr/colorOnSurface" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
+    </LinearLayout>
+
 </LinearLayout>
