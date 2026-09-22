@@ -15,6 +15,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import android.content.Intent
+import android.util.Log
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,7 +44,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.btn_logout).setOnClickListener {
-            Snackbar.make(it, "Logged out successfully!", Snackbar.LENGTH_SHORT).show()
+            Log.d("MainActivity", "User logged out, returning to LoginActivity")
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
         }
     }
 
