@@ -14,6 +14,10 @@
         <item name="colorOnSurfaceVariant">@color/text_secondary_dark</item>
         <item name="colorSurfaceContainer">@color/theme_surface_container_dark</item>
 
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+
         <item name="editTextColor">@color/text_primary_dark</item>
     </style>
 </resources>
