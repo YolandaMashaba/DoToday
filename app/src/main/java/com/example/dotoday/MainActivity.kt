@@ -141,20 +141,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate() - Initializing MainActivity view hierarchy")
 
-        // Enable edge-to-edge window drawing
-        enableEdgeToEdge()
+        // Avoid forcing edge-to-edge window behavior on a theme that is already handling system bars.
+        // This prevents the recursive insets/layout work that can trigger System UI not responding errors.
         setContentView(R.layout.activity_main)
-
-        // Set proper window insets handling to avoid layout thrashing
-        ViewCompat.setWindowInsetsAnimationCallback(
-            window.decorView,
-            object : androidx.core.view.WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
-                override fun onProgress(
-                    insets: WindowInsetsCompat,
-                    runningAnimations: MutableList<androidx.core.view.WindowInsetsAnimationCompat>
-                ): WindowInsetsCompat = insets
-            }
-        )
 
         // Initialize core component sections
         setupTimeline()

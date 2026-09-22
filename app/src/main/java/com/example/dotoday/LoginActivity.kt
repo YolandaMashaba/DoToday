@@ -35,20 +35,9 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate() - Initializing LoginActivity UI and Edge-to-Edge window insets")
 
-        // Enable edge-to-edge display mode to extend layout beneath status and navigation bars
-        enableEdgeToEdge()
+        // Do not force edge-to-edge rendering here; the app theme already handles bars
+        // and the previous insets callback caused layout loops that triggered ANR state.
         setContentView(R.layout.activity_login)
-
-        // Set proper window insets handling to avoid layout thrashing and ANR issues
-        ViewCompat.setWindowInsetsAnimationCallback(
-            window.decorView,
-            object : androidx.core.view.WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
-                override fun onProgress(
-                    insets: WindowInsetsCompat,
-                    runningAnimations: MutableList<androidx.core.view.WindowInsetsAnimationCompat>
-                ): WindowInsetsCompat = insets
-            }
-        )
 
         // Bind layout view components
         tilEmail = findViewById(R.id.til_email)

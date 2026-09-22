@@ -37,20 +37,9 @@ class RegisterActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate() - Initializing RegisterActivity UI and Edge-to-Edge insets")
 
-        // Enable edge-to-edge window drawing
-        enableEdgeToEdge()
+        // Do not force edge-to-edge rendering here; the app theme already handles bars
+        // and the previous insets callback caused layout loops that triggered ANR state.
         setContentView(R.layout.activity_register)
-
-        // Set proper window insets handling to avoid layout thrashing and ANR issues
-        ViewCompat.setWindowInsetsAnimationCallback(
-            window.decorView,
-            object : androidx.core.view.WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
-                override fun onProgress(
-                    insets: WindowInsetsCompat,
-                    runningAnimations: MutableList<androidx.core.view.WindowInsetsAnimationCompat>
-                ): WindowInsetsCompat = insets
-            }
-        )
 
         // Bind layout views
         tilEmail = findViewById(R.id.til_email)
