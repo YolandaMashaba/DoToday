@@ -13,12 +13,32 @@
         android:text="Inbox"
         android:textSize="32sp"
         android:textStyle="bold"
-        android:textColor="@color/white"
+        android:textColor="?attr/colorOnSurface"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginTop="32dp" />
 
+    <ProgressBar
+        android:id="@+id/pb_inbox_loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_inbox_title" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_inbox"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/btn_new_inbox_task_bottom"
+        app:layout_constraintTop_toBottomOf="@id/tv_inbox_title" />
+
     <LinearLayout
+        android:id="@+id/layout_inbox_empty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
@@ -38,8 +58,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Your Unstructured Thoughts"
-            android:textColor="@color/white"
+            android:text="My Disorganised Thoughts"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -51,7 +71,7 @@
             android:paddingStart="32dp"
             android:paddingEnd="32dp"
             android:text="Capture tasks and thoughts as they come. Move them to your timeline when you're ready to schedule."
-            android:textColor="@color/text_secondary_color"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp" />
 
         <com.google.android.material.button.MaterialButton
@@ -59,7 +79,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
-            android:backgroundTint="@color/inbox_button_background"
+            android:backgroundTint="?attr/colorSurfaceContainer"
             android:paddingStart="24dp"
             android:paddingEnd="24dp"
             android:text="+ New Inbox Task"
@@ -68,5 +88,20 @@
             app:cornerRadius="12dp" />
 
     </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_new_inbox_task_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="?attr/colorSurfaceContainer"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:text="+ New Inbox Task"
+        android:textAllCaps="false"
+        android:textColor="@color/app_secondary"
+        android:visibility="gone"
+        app:cornerRadius="12dp"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

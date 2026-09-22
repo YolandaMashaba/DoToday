@@ -1,0 +1,8 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="line">
+    <stroke
+        android:width="3dp"
+        android:color="#2196F3"
+        android:dashWidth="6dp"
+        android:dashGap="6dp" />
+</shape>

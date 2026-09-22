@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <!-- Left Ruler Container -->
+    <LinearLayout
+        android:id="@+id/layout_ruler_times"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tv_ruler_time1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="12sp"
+            tools:text="12:00" />
+
+        <TextView
+            android:id="@+id/tv_ruler_time2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="12sp"
+            tools:text="16:00" />
+
+        <TextView
+            android:id="@+id/tv_ruler_current_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textColor="@color/app_secondary"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            tools:text="19:23" />
+
+    </LinearLayout>
+
+    <!-- Vertical Dashed Connector Line Axis -->
+    <View
+        android:id="@+id/line_dashed_axis"
+        android:layout_width="3dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="36dp"
+        android:background="@drawable/drawable_dashed_line"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/layout_ruler_times"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Right Section: Countdown Banner & Add Task Button -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/line_dashed_axis"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Countdown / Remaining Info -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_alarm"
+                app:tint="@color/app_secondary"
+                android:contentDescription="Timer Icon" />
+
+            <TextView
+                android:id="@+id/tv_interval_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="14sp"
+                tools:text="2h 37m left — then, let's dive in!" />
+        </LinearLayout>
+
+        <!-- Inline Add Task Pill Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_inline_add_task"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="+ Add Task"
+            android:textAllCaps="false"
+            android:textColor="@color/app_secondary"
+            android:textSize="14sp"
+            app:backgroundTint="?attr/colorSurfaceContainer"
+            app:cornerRadius="20dp"
+            app:icon="@android:drawable/ic_input_add"
+            app:iconTint="@color/app_secondary"
+            app:strokeColor="@color/app_secondary"
+            app:strokeWidth="1dp" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
