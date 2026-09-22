@@ -1,6 +1,8 @@
 package com.example.dotoday.data
 
 import com.example.dotoday.api.TodoistApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -26,8 +28,8 @@ class TodoistRepository {
             .create(TodoistApi::class.java)
     }
 
-    suspend fun getTasks(): Result<List<TodoistTask>> {
-        return try {
+    suspend fun getTasks(): Result<List<TodoistTask>> = withContext(Dispatchers.IO) {
+        try {
             val response = api.getTasks(token)
             if (response.isSuccessful) {
                 Result.success(response.body() ?: emptyList())
@@ -39,8 +41,8 @@ class TodoistRepository {
         }
     }
 
-    suspend fun addTask(content: String, description: String? = null): Result<TodoistTask> {
-        return try {
+    suspend fun addTask(content: String, description: String? = null): Result<TodoistTask> = withContext(Dispatchers.IO) {
+        try {
             val response = api.createTask(token, TodoistApi.CreateTaskRequest(content, description))
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)

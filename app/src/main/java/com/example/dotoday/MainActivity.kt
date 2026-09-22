@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity() {
         
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
 
@@ -246,9 +246,7 @@ class MainActivity : AppCompatActivity() {
         val etDescription = dialogView.findViewById<TextInputEditText>(R.id.et_task_description)
         
         // Hide time and duration for Todoist Inbox tasks
-        dialogView.findViewById<View>(R.id.btn_pick_time).visibility = View.GONE
-        dialogView.findViewById<View>(R.id.btn_pick_end_time).visibility = View.GONE
-        dialogView.findViewById<View>(R.id.et_task_duration).parent.let { (it.parent as View).visibility = View.GONE }
+        dialogView.findViewById<View>(R.id.layout_time_duration)?.visibility = View.GONE
         dialogView.findViewById<TextView>(R.id.tv_dialog_title)?.text = "New Inbox Task"
 
         val dialog = MaterialAlertDialogBuilder(this)
