@@ -2,11 +2,15 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/day_root"
     android:layout_width="60dp"
     android:layout_height="wrap_content"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:background="?attr/selectableItemBackgroundBorderless">
 
     <TextView
         android:id="@+id/tv_day_name"
@@ -22,27 +26,32 @@
         android:layout_height="32dp"
         android:layout_marginTop="4dp"
         android:gravity="center"
-        android:textColor="@color/white"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="16sp"
         android:textStyle="bold"
         tools:text="17" />
 
     <LinearLayout
+        android:id="@+id/layout_dots"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:orientation="horizontal">
+
         <View
-            android:layout_width="8dp"
-            android:layout_height="8dp"
+            android:id="@+id/dot1"
+            android:layout_width="6dp"
+            android:layout_height="6dp"
             android:background="@drawable/shape_circle_small"
-            android:backgroundTint="@color/app_secondary"/>
+            android:backgroundTint="@color/app_secondary" />
+
         <View
-            android:layout_width="8dp"
-            android:layout_height="8dp"
+            android:id="@+id/dot2"
+            android:layout_width="6dp"
+            android:layout_height="6dp"
             android:layout_marginStart="2dp"
             android:background="@drawable/shape_circle_small"
-            android:backgroundTint="@color/app_primary"/>
+            android:backgroundTint="@color/app_primary" />
     </LinearLayout>
 
 </LinearLayout>

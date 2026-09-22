@@ -15,14 +15,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DoToday">
 
-        <activity
-            android:name=".SettingsActivity"
-            android:exported="false" />
-
+        <!-- Launcher activity -->
         <activity
             android:name=".LoginActivity"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:theme="@style/Theme.DoToday">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -30,12 +27,19 @@
         </activity>
 
         <activity
-            android:name=".RegisterActivity"
+            android:name=".SettingsActivity"
             android:exported="false" />
 
         <activity
+            android:name=".RegisterActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DoToday" />
+
+        <activity
             android:name=".MainActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.DoToday" />
+
     </application>
 
 </manifest>
