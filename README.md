@@ -6,13 +6,13 @@
 
 ## Features
 
-- 📅 **Interactive Week Picker**: Horizontal week calendar header with day selection, dynamic task indicator dots, and smooth selection animations.
-- ⏱️ **Daily Timeline View**: Chronological timeline displaying scheduled tasks, time interval rulers, duration countdowns, and completion toggles.
-- 🗓️ **Month Calendar Overview**: Full-screen modal calendar previewing task lists for any selected date in the month.
-- 🔁 **Task Creation & Repeat Engine**: Add single or repeating tasks (Daily or Weekly) with automatic multi-day timeline scheduling and time duration calculation.
-- 📥 **Todoist REST API Sync**: Asynchronous Inbox task fetching and creation integrated with the Todoist REST API v2 using Retrofit and Kotlin Coroutines, featuring automatic local task fallback for offline resilience.
-- 🔐 **Authentication System**: Login and Register screens featuring client-side form validation, password strength checks, and clean backstack navigation.
-- 🎨 **Material Design 3 & Edge-to-Edge**: Modern Material 3 UI theme support (Light & Dark modes) with safe System UI window bar insets handling.
+- **Interactive Week Picker**: Horizontal week calendar header with day selection, dynamic task indicator dots, and smooth selection animations.
+- **Daily Timeline View**: Chronological timeline displaying scheduled tasks, time interval rulers, duration countdowns, and completion toggles.
+- **Month Calendar Overview**: Full-screen modal calendar previewing task lists for any selected date in the month.
+- **Task Creation & Repeat Engine**: Add single or repeating tasks (Daily or Weekly) with automatic multi-day timeline scheduling and time duration calculation.
+- **Todoist REST API Sync**: Asynchronous Inbox task fetching and creation integrated with the Todoist REST API v2 using Retrofit and Kotlin Coroutines, featuring automatic local task fallback for offline resilience.
+- **Authentication System**: Login and Register screens featuring client-side form validation, password strength checks, and clean backstack navigation.
+- **Material Design 3 & Edge-to-Edge**: Modern Material 3 UI theme support (Light & Dark modes) with safe System UI window bar insets handling.
 
 ---
 
@@ -26,6 +26,7 @@
 | **Networking** | [Retrofit 2](https://square.github.io/retrofit/), [OkHttpClient 4](https://square.github.io/okhttp/) (Logging Interceptor + 5s Timeouts), [Gson](https://github.com/google/gson) |
 | **Build Tools** | Gradle with Kotlin DSL (`build.gradle.kts`) & Version Catalog (`libs.versions.toml`) |
 | **SDK Versions** | `minSdk = 24` (Android 7.0), `compileSdk = 37`, `targetSdk = 37` |
+| **YouTube Link** | [YouTube](https://youtube.com/shorts/9E9OtRP0Ah4?feature=share) |
 
 ---
 
