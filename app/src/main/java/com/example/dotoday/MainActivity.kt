@@ -145,15 +145,16 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        // Apply system bar insets to root view (R.id.main) cleanly to avoid layout loops
-        findViewById<View>(R.id.main)?.let { root ->
-            ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
-                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                Log.v(TAG, "Applying SystemBars insets: top=${systemBars.top}, bottom=${systemBars.bottom}")
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-                insets
+        // Set proper window insets handling to avoid layout thrashing
+        ViewCompat.setWindowInsetsAnimationCallback(
+            window.decorView,
+            object : androidx.core.view.WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<androidx.core.view.WindowInsetsAnimationCompat>
+                ): WindowInsetsCompat = insets
             }
-        }
+        )
 
         // Initialize core component sections
         setupTimeline()

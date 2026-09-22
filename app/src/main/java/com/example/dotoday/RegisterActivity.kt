@@ -41,15 +41,16 @@ class RegisterActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_register)
 
-        // Apply system window bar insets to root ScrollView (R.id.main)
-        findViewById<View>(R.id.main)?.let { root ->
-            ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
-                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                Log.v(TAG, "Applying SystemBars insets: top=${systemBars.top}, bottom=${systemBars.bottom}")
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-                insets
+        // Set proper window insets handling to avoid layout thrashing and ANR issues
+        ViewCompat.setWindowInsetsAnimationCallback(
+            window.decorView,
+            object : androidx.core.view.WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<androidx.core.view.WindowInsetsAnimationCompat>
+                ): WindowInsetsCompat = insets
             }
-        }
+        )
 
         // Bind layout views
         tilEmail = findViewById(R.id.til_email)

@@ -39,16 +39,16 @@ class LoginActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_login)
 
-        // Apply window insets to the root ScrollView (R.id.main) instead of android.R.id.content
-        // to prevent System UI inset calculation recursion and framework layout hangs.
-        findViewById<View>(R.id.main)?.let { root ->
-            ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
-                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                Log.v(TAG, "Applying SystemBars insets: top=${systemBars.top}, bottom=${systemBars.bottom}")
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-                insets
+        // Set proper window insets handling to avoid layout thrashing and ANR issues
+        ViewCompat.setWindowInsetsAnimationCallback(
+            window.decorView,
+            object : androidx.core.view.WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<androidx.core.view.WindowInsetsAnimationCompat>
+                ): WindowInsetsCompat = insets
             }
-        }
+        )
 
         // Bind layout view components
         tilEmail = findViewById(R.id.til_email)
