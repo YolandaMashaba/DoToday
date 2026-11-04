@@ -134,7 +134,7 @@ class MainActivity : AppCompatActivity() {
         )
     )
 
-    private val todoistRepository = TodoistRepository()
+    private val todoistRepository by lazy { TodoistRepository(applicationContext) }
     private lateinit var inboxAdapter: InboxAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
