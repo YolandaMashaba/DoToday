@@ -3,25 +3,18 @@ package com.example.dotoday
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import android.view.View
-import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
-import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
@@ -31,12 +24,22 @@ import com.google.android.material.timepicker.TimeFormat
 import java.util.Locale
 
 /**
- * Settings screen for configuring user profile, app theme, default task times,
- * completed task behaviors, haptic feedback, and user session management (Logout).
+ * Settings screen matching the app's Material 3 design system (`layout_settings.xml`).
+ * Configures user profile, app theme, default task time, completed task actions,
+ * haptic feedback, and user logout.
  */
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var prefs: SharedPreferences
+
+    private lateinit var tvProfileName: TextView
+    private lateinit var tvProfileEmail: TextView
+    private lateinit var btnEditUsername: MaterialButton
+    private lateinit var dropdownTheme: AutoCompleteTextView
+    private lateinit var btnDefaultTime: MaterialButton
+    private lateinit var dropdownBehavior: AutoCompleteTextView
+    private lateinit var switchHaptic: SwitchMaterial
+    private lateinit var btnLogout: MaterialButton
 
     companion object {
         const val PREFS_NAME = "DoTodaySettings"
@@ -49,250 +52,108 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.layout_settings)
 
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-        // Root vertical layout
-        val rootLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT
-            )
-            setBackgroundColor(Color.parseColor("#121212")) // Dark background to match app
-        }
+        // Bind views from layout_settings.xml
+        tvProfileName = findViewById(R.id.tv_profile_name)
+        tvProfileEmail = findViewById(R.id.tv_profile_email)
+        btnEditUsername = findViewById(R.id.btn_edit_username)
+        dropdownTheme = findViewById(R.id.dropdown_theme)
+        btnDefaultTime = findViewById(R.id.btn_default_time)
+        dropdownBehavior = findViewById(R.id.dropdown_completed_behavior)
+        switchHaptic = findViewById(R.id.switch_haptic)
+        btnLogout = findViewById(R.id.btn_logout)
 
-        // 1. Top Toolbar with Navigation Back Arrow
-        val toolbar = MaterialToolbar(this).apply {
-            title = "Settings"
-            setTitleTextColor(Color.WHITE)
-            setBackgroundColor(Color.parseColor("#1F1F1F"))
-            navigationIcon = androidx.core.content.ContextCompat.getDrawable(
-                this@SettingsActivity,
-                android.R.drawable.ic_menu_revert
-            )
-            setNavigationOnClickListener { finish() }
-        }
-        rootLayout.addView(toolbar)
-
-        // Scrollable content view for settings items
-        val scrollView = ScrollView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT
-            )
-        }
-
-        val contentLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 32, 48, 48)
-        }
-
-
-        // FEATURE 1: User Profile & Username Management
-
-        val profileLabel = createSectionLabel("User Profile")
-        val profileCard = MaterialCardView(this).apply {
-            setCardBackgroundColor(Color.parseColor("#1F1F1F"))
-            radius = 16f
-            strokeWidth = 0
-            val cardPadding = 32
-            setPadding(cardPadding, cardPadding, cardPadding, cardPadding)
-        }
-
-        val profileInnerLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(24, 24, 24, 24)
-        }
-
+        // 1. User Profile Setup
         val currentUsername = prefs.getString(KEY_USERNAME, "DoToday User") ?: "DoToday User"
-        val tvUsername = TextView(this).apply {
-            text = "Username: $currentUsername"
-            setTextColor(Color.WHITE)
-            textSize = 16f
-            setPadding(0, 0, 0, 16)
+        tvProfileName.text = currentUsername
+        tvProfileEmail.text = "Active Account"
+
+        btnEditUsername.setOnClickListener {
+            showUpdateUsernameDialog()
         }
-        profileInnerLayout.addView(tvUsername)
 
-        val btnEditUsername = MaterialButton(this).apply {
-            text = "Update Username"
-            setBackgroundColor(Color.parseColor("#2C2C2E"))
-            setTextColor(Color.WHITE)
-            setOnClickListener {
-                showUpdateUsernameDialog(tvUsername)
-            }
-        }
-        profileInnerLayout.addView(btnEditUsername)
-
-        profileCard.addView(profileInnerLayout)
-        contentLayout.addView(profileLabel)
-        contentLayout.addView(profileCard)
-
-        addSpacer(contentLayout)
-
-
-        // FEATURE 2: App Theme Selection (Light / Dark Mode)
-
-        val themeLabel = createSectionLabel("App Theme")
-        val themeInputLayout = createDropdownContainer("Select Theme")
-
+        // 2. App Theme Selection
         val themeOptions = arrayOf("System Default", "Light Mode", "Dark Mode")
         val themeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, themeOptions)
+        dropdownTheme.setAdapter(themeAdapter)
+        val currentTheme = prefs.getString(KEY_THEME, "System Default")
+        dropdownTheme.setText(currentTheme, false)
 
-        val themeDropdown = AutoCompleteTextView(themeInputLayout.context).apply {
-            inputType = android.text.InputType.TYPE_NULL
-            setTextColor(Color.WHITE)
-            setAdapter(themeAdapter)
-
-            val currentTheme = prefs.getString(KEY_THEME, "System Default")
-            setText(currentTheme, false)
-
-            setOnClickListener { showDropDown() }
-            setOnFocusChangeListener { _, hasFocus -> if (hasFocus) showDropDown() }
-
-            setOnItemClickListener { _, _, position, _ ->
-                val selected = themeOptions[position]
-                prefs.edit().putString(KEY_THEME, selected).apply()
-                applyAppTheme(selected)
-            }
+        dropdownTheme.setOnItemClickListener { _, _, position, _ ->
+            val selected = themeOptions[position]
+            prefs.edit().putString(KEY_THEME, selected).apply()
+            applyAppTheme(selected)
+            Toast.makeText(this, "Theme updated", Toast.LENGTH_SHORT).show()
         }
-        themeInputLayout.addView(themeDropdown)
 
-        contentLayout.addView(themeLabel)
-        contentLayout.addView(themeInputLayout)
-
-        addSpacer(contentLayout)
-
-
-        // FEATURE 3: Default Due Time
-
-        val timeLabel = createSectionLabel("Default Task Time")
+        // 3. Default Due Time
         val savedTime = prefs.getString(KEY_DEFAULT_DUE_TIME, "09:00") ?: "09:00"
+        btnDefaultTime.text = "Default Task Time: $savedTime"
+        btnDefaultTime.setOnClickListener {
+            val timeParts = savedTime.split(":")
+            val hour = timeParts.getOrNull(0)?.toIntOrNull() ?: 9
+            val minute = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
 
-        val timePickerButton = MaterialButton(this).apply {
-            text = "Default Time: $savedTime"
-            setBackgroundColor(Color.parseColor("#2C2C2E"))
-            setTextColor(Color.WHITE)
-            setOnClickListener {
-                val timeParts = savedTime.split(":")
-                val hour = timeParts.getOrNull(0)?.toIntOrNull() ?: 9
-                val minute = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
+            val picker = MaterialTimePicker.Builder()
+                .setTimeFormat(TimeFormat.CLOCK_24H)
+                .setHour(hour)
+                .setMinute(minute)
+                .setTitleText("Select Default Task Time")
+                .build()
 
-                val picker = MaterialTimePicker.Builder()
-                    .setTimeFormat(TimeFormat.CLOCK_24H)
-                    .setHour(hour)
-                    .setMinute(minute)
-                    .setTitleText("Select Default Task Time")
-                    .build()
-
-                picker.addOnPositiveButtonClickListener {
-                    val newTime = String.format(Locale.getDefault(), "%02d:%02d", picker.hour, picker.minute)
-                    prefs.edit().putString(KEY_DEFAULT_DUE_TIME, newTime).apply()
-                    text = "Default Time: $newTime"
-                    Toast.makeText(context, "Default time saved", Toast.LENGTH_SHORT).show()
-                }
-                picker.show(supportFragmentManager, "DEFAULT_TIME_PICKER")
+            picker.addOnPositiveButtonClickListener {
+                val newTime = String.format(Locale.getDefault(), "%02d:%02d", picker.hour, picker.minute)
+                prefs.edit().putString(KEY_DEFAULT_DUE_TIME, newTime).apply()
+                btnDefaultTime.text = "Default Task Time: $newTime"
+                Toast.makeText(this, "Default time saved", Toast.LENGTH_SHORT).show()
             }
+            picker.show(supportFragmentManager, "DEFAULT_TIME_PICKER")
         }
 
-        contentLayout.addView(timeLabel)
-        contentLayout.addView(timePickerButton)
-
-        addSpacer(contentLayout)
-
-
-        // FEATURE 4: Completed Task Action
-
-        val behaviorLabel = createSectionLabel("Completed Task Action")
-        val behaviorInputLayout = createDropdownContainer("Select Action")
-
+        // 4. Completed Task Action
         val behaviorOptions = arrayOf("Keep in Place", "Move to Bottom", "Hide Immediately")
         val behaviorAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, behaviorOptions)
+        dropdownBehavior.setAdapter(behaviorAdapter)
+        val currentBehavior = prefs.getString(KEY_COMPLETED_BEHAVIOR, "Move to Bottom")
+        dropdownBehavior.setText(currentBehavior, false)
 
-        val behaviorDropdown = AutoCompleteTextView(behaviorInputLayout.context).apply {
-            inputType = android.text.InputType.TYPE_NULL
-            setTextColor(Color.WHITE)
-            setAdapter(behaviorAdapter)
+        dropdownBehavior.setOnItemClickListener { _, _, position, _ ->
+            val selected = behaviorOptions[position]
+            prefs.edit().putString(KEY_COMPLETED_BEHAVIOR, selected).apply()
+            Toast.makeText(this, "Preference saved", Toast.LENGTH_SHORT).show()
+        }
 
-            val currentBehavior = prefs.getString(KEY_COMPLETED_BEHAVIOR, "Move to Bottom")
-            setText(currentBehavior, false)
-
-            setOnClickListener { showDropDown() }
-            setOnFocusChangeListener { _, hasFocus -> if (hasFocus) showDropDown() }
-
-            setOnItemClickListener { _, _, position, _ ->
-                val selected = behaviorOptions[position]
-                prefs.edit().putString(KEY_COMPLETED_BEHAVIOR, selected).apply()
-                Toast.makeText(context, "Preference saved", Toast.LENGTH_SHORT).show()
+        // 5. Haptic Feedback Toggle
+        switchHaptic.isChecked = prefs.getBoolean(KEY_HAPTIC_FEEDBACK, true)
+        switchHaptic.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(KEY_HAPTIC_FEEDBACK, isChecked).apply()
+            if (isChecked) {
+                triggerHapticFeedback(this)
             }
         }
-        behaviorInputLayout.addView(behaviorDropdown)
 
-        contentLayout.addView(behaviorLabel)
-        contentLayout.addView(behaviorInputLayout)
-
-        addSpacer(contentLayout)
-
-
-        // FEATURE 5: Haptic Feedback Toggle
-
-        val hapticCard = MaterialCardView(this).apply {
-            setCardBackgroundColor(Color.parseColor("#1F1F1F"))
-            radius = 16f
-            strokeWidth = 0
-            val cardPadding = 32
-            setPadding(cardPadding, cardPadding, cardPadding, cardPadding)
-        }
-
-        val hapticSwitch = SwitchMaterial(this).apply {
-            text = "Haptic Feedback on Completion"
-            setTextColor(Color.WHITE)
-            isChecked = prefs.getBoolean(KEY_HAPTIC_FEEDBACK, true)
-
-            setOnCheckedChangeListener { _, isChecked ->
-                prefs.edit().putBoolean(KEY_HAPTIC_FEEDBACK, isChecked).apply()
-                if (isChecked) {
-                    triggerHapticFeedback(context)
-                }
-            }
-        }
-        hapticCard.addView(hapticSwitch)
-        contentLayout.addView(hapticCard)
-
-        addSpacer(contentLayout)
-
-
-        // FEATURE 6: Logout Button
-
-        val logoutButton = MaterialButton(this).apply {
-            text = "Log Out"
-            setBackgroundColor(Color.parseColor("#CF6679")) // Error/Red tint
-            setTextColor(Color.WHITE)
-            setOnClickListener {
-                MaterialAlertDialogBuilder(this@SettingsActivity)
-                    .setTitle("Log Out")
-                    .setMessage("Are you sure you want to log out of DoToday?")
-                    .setPositiveButton("Log Out") { _, _ ->
-                        Toast.makeText(context, "Logged out successfully", Toast.LENGTH_SHORT).show()
-                        val intent = Intent(this@SettingsActivity, LoginActivity::class.java).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        }
-                        startActivity(intent)
-                        finish()
+        // 6. Logout Button
+        btnLogout.setOnClickListener {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Log Out")
+                .setMessage("Are you sure you want to log out of DoToday?")
+                .setPositiveButton("Log Out") { _, _ ->
+                    Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(this, LoginActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     }
-                    .setNegativeButton("Cancel", null)
-                    .show()
-            }
+                    startActivity(intent)
+                    finish()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
-        contentLayout.addView(logoutButton)
-
-
-        scrollView.addView(contentLayout)
-        rootLayout.addView(scrollView)
-        setContentView(rootLayout)
     }
 
-    private fun showUpdateUsernameDialog(tvUsername: TextView) {
+    private fun showUpdateUsernameDialog() {
         val inputLayout = TextInputLayout(this).apply {
             hint = "New Username"
             setPadding(32, 16, 32, 16)
@@ -310,7 +171,7 @@ class SettingsActivity : AppCompatActivity() {
                 val newName = editText.text?.toString()?.trim() ?: ""
                 if (newName.isNotEmpty()) {
                     prefs.edit().putString(KEY_USERNAME, newName).apply()
-                    tvUsername.text = "Username: $newName"
+                    tvProfileName.text = newName
                     Toast.makeText(this, "Username updated", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "Username cannot be empty", Toast.LENGTH_SHORT).show()
@@ -327,41 +188,6 @@ class SettingsActivity : AppCompatActivity() {
             else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
         }
         AppCompatDelegate.setDefaultNightMode(mode)
-    }
-
-    private fun createSectionLabel(title: String): TextView {
-        return TextView(this).apply {
-            text = title
-            textSize = 14f
-            setTextColor(Color.parseColor("#A0A0A0"))
-            setPadding(0, 0, 0, 12)
-        }
-    }
-
-    private fun createDropdownContainer(hintText: String): TextInputLayout {
-        return TextInputLayout(
-            this,
-            null,
-            com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox_ExposedDropdownMenu
-        ).apply {
-            hint = hintText
-            setHintTextColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#A0A0A0")))
-            boxStrokeColor = Color.parseColor("#2F80ED")
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        }
-    }
-
-    private fun addSpacer(container: LinearLayout) {
-        val spacer = View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                32
-            )
-        }
-        container.addView(spacer)
     }
 
     private fun triggerHapticFeedback(context: Context) {
