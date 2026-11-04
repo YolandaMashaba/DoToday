@@ -87,6 +87,21 @@
             app:cornerRadius="12dp" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_sso_login"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp"
+            android:text="Sign in with Google / SSO"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            app:strokeColor="@color/app_secondary"
+            android:textColor="?attr/colorOnSurface"
+            app:cornerRadius="12dp" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_go_to_register"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
