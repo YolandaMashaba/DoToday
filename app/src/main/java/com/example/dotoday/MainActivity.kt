@@ -211,8 +211,8 @@ class MainActivity : AppCompatActivity() {
         setupTimeline()
         setupCalendar()
         setupInbox()
-        setupSettings()
         setupBottomNav()
+        selectTab(R.id.nav_timeline)
 
         lifecycleScope.launch {
             val savedTasks = withContext(Dispatchers.IO) { loadTasksFromPrefs() }
@@ -597,13 +597,19 @@ class MainActivity : AppCompatActivity() {
         val nav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
         val savedTabId = prefs.getInt("key_selected_tab", R.id.nav_timeline)
+        val defaultTabId = if (savedTabId in listOf(R.id.nav_timeline, R.id.nav_notes, R.id.nav_inbox, R.id.nav_settings)) savedTabId else R.id.nav_timeline
 
         nav.setOnItemSelectedListener { item ->
+            if (item.itemId == R.id.nav_settings) {
+                prefs.edit().putInt("key_selected_tab", R.id.nav_timeline).apply()
+                startActivity(Intent(this, SettingsActivity::class.java))
+                return@setOnItemSelectedListener true
+            }
             prefs.edit().putInt("key_selected_tab", item.itemId).apply()
             selectTab(item.itemId)
             true
         }
-        nav.selectedItemId = savedTabId
+        nav.selectedItemId = defaultTabId
     }
 
     private fun setupSettings() {
