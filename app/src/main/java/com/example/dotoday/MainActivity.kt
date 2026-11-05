@@ -141,7 +141,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<FloatingActionButton>(R.id.fab_add_task).setOnClickListener { showAddTaskDialog() }
         findViewById<View>(R.id.btn_new_inbox_task).setOnClickListener { showAddTodoistTaskDialog() }
         findViewById<View>(R.id.btn_new_inbox_task_bottom).setOnClickListener { showAddTodoistTaskDialog() }
-        findViewById<View>(R.id.btn_logout).setOnClickListener { view ->
+        findViewById<View>(R.id.btn_logout)?.setOnClickListener { view ->
+            val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putBoolean(SettingsActivity.KEY_IS_LOGGED_IN, false).apply()
             Snackbar.make(view, getString(R.string.general_logout_success), Snackbar.LENGTH_SHORT).show()
             startActivity(Intent(this, LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -467,6 +469,8 @@ class MainActivity : AppCompatActivity() {
                 .setTitle("Log Out")
                 .setMessage("Are you sure you want to log out of DoToday?")
                 .setPositiveButton("Log Out") { _, _ ->
+                    val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+                    prefs.edit().putBoolean(SettingsActivity.KEY_IS_LOGGED_IN, false).apply()
                     Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
                     val intent = Intent(this, LoginActivity::class.java).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
