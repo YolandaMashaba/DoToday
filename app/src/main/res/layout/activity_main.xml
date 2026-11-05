@@ -110,7 +110,7 @@
             <include
                 android:id="@+id/layout_settings"
                 layout="@layout/layout_settings"
-                android:visibility="visible" />
+                android:visibility="gone" />
 
         </FrameLayout>
 
