@@ -53,7 +53,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
-        private const val YEAR = 2026
     }
 
     data class DayInfo(val name: String, val fullName: String, val number: String)
@@ -80,17 +79,23 @@ class MainActivity : AppCompatActivity() {
     private val daysList: List<DayInfo>
         get() {
             val locale = resources.configuration.locales[0]
-            return (20..26).map { day ->
-                val date = Calendar.getInstance().apply { set(YEAR, Calendar.SEPTEMBER, day) }
+            val today = Calendar.getInstance()
+            val currentDay = today.get(Calendar.DAY_OF_MONTH)
+            val startDay = currentDay - 3
+            val endDay = currentDay + 3
+            return (startDay..endDay).map { day ->
+                val date = Calendar.getInstance().apply {
+                    set(Calendar.DAY_OF_MONTH, day)
+                }
                 DayInfo(
                     SimpleDateFormat("EEE", locale).format(date.time),
                     SimpleDateFormat("d MMMM yyyy", locale).format(date.time) + " >",
-                    day.toString()
+                    date.get(Calendar.DAY_OF_MONTH).toString()
                 )
             }
         }
 
-    private var selectedDayNumber = "22"
+    private var selectedDayNumber = ""
     private lateinit var timelineAdapter: TimelineAdapter
     private lateinit var inboxAdapter: InboxAdapter
     private val dayViewsMap = mutableMapOf<String, Pair<View, TextView>>()
@@ -195,6 +200,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applySavedTheme()
+        selectedDayNumber = Calendar.getInstance().get(Calendar.DAY_OF_MONTH).toString()
         tasksByDay.putAll(defaultTasksByDay())
 
         // Initialize Firebase Cloud Messaging notifications and local task reminders
@@ -226,14 +232,20 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_new_inbox_task).setOnClickListener { showAddTodoistTaskDialog() }
         findViewById<View>(R.id.btn_new_inbox_task_bottom).setOnClickListener { showAddTodoistTaskDialog() }
         findViewById<View>(R.id.btn_logout)?.setOnClickListener { view ->
-            val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putBoolean(SettingsActivity.KEY_IS_LOGGED_IN, false).apply()
-            Snackbar.make(view, getString(R.string.general_logout_success), Snackbar.LENGTH_SHORT).show()
-            startActivity(Intent(this, LoginActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            })
-            finish()
+            logout(view)
         }
+    }
+
+    private fun logout(anchorView: View? = null) {
+        val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(SettingsActivity.KEY_IS_LOGGED_IN, false).apply()
+        if (anchorView != null) {
+            Snackbar.make(anchorView, getString(R.string.general_logout_success), Snackbar.LENGTH_SHORT).show()
+        }
+        startActivity(Intent(this, LoginActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
+        finish()
     }
 
     private fun getCurrentTimeFormatted(): String {
@@ -389,6 +401,8 @@ class MainActivity : AppCompatActivity() {
         container.removeAllViews()
         dayViewsMap.clear()
         val inflater = LayoutInflater.from(this)
+        val currentMonth = Calendar.getInstance().get(Calendar.MONTH)
+        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
         daysList.forEach { day ->
             val item = inflater.inflate(R.layout.item_calendar_day, container, false)
             item.findViewById<TextView>(R.id.tv_day_name).text = day.name
@@ -399,7 +413,12 @@ class MainActivity : AppCompatActivity() {
             item.setOnClickListener { selectCalendarDay(day, animate = true) }
             container.addView(item)
         }
-        daysList.firstOrNull { it.number == selectedDayNumber }?.let { selectCalendarDay(it, animate = false) }
+        val selected = daysList.firstOrNull { it.number == selectedDayNumber }
+            ?: daysList.firstOrNull { it.number == Calendar.getInstance().get(Calendar.DAY_OF_MONTH).toString() }
+            ?: daysList.first()
+        selectedDayNumber = selected.number
+        selectCalendarDay(selected, animate = false)
+        findViewById<TextView>(R.id.tv_month_year)?.text = selected.fullName
     }
 
     private fun updateDayDots(dayNumber: String, dayView: View) {
@@ -455,8 +474,11 @@ class MainActivity : AppCompatActivity() {
             if (tasks.isNotEmpty()) preview.adapter = DialogTaskPreviewAdapter(tasks)
         }
 
-        Calendar.getInstance().apply { set(YEAR, Calendar.SEPTEMBER, selectedDay.toIntOrNull() ?: 22) }
-            .also { calendar.date = it.timeInMillis }
+        val today = Calendar.getInstance()
+        val targetDay = selectedDay.toIntOrNull() ?: today.get(Calendar.DAY_OF_MONTH)
+        today.apply {
+            set(Calendar.DAY_OF_MONTH, targetDay)
+        }.also { calendar.date = it.timeInMillis }
         updatePreview(selectedDay, selectedFullName)
         calendar.setOnDateChangeListener { _, year, month, dayOfMonth ->
             selectedDay = dayOfMonth.toString()
@@ -702,14 +724,7 @@ class MainActivity : AppCompatActivity() {
                 .setTitle("Log Out")
                 .setMessage("Are you sure you want to log out of DoToday?")
                 .setPositiveButton("Log Out") { _, _ ->
-                    val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
-                    prefs.edit().putBoolean(SettingsActivity.KEY_IS_LOGGED_IN, false).apply()
-                    Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(this, LoginActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                    startActivity(intent)
-                    finish()
+                    logout(it)
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
