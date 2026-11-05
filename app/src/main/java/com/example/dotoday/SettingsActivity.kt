@@ -51,6 +51,7 @@ class SettingsActivity : AppCompatActivity() {
         const val KEY_HAPTIC_FEEDBACK = "key_haptic_feedback"
         const val KEY_USERNAME = "key_username"
         const val KEY_LANGUAGE = "key_language"
+        const val KEY_IS_LOGGED_IN = "key_is_logged_in"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
