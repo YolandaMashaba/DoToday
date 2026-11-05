@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "38865657408",
+    "project_id": "dotoday-dc736",
+    "storage_bucket": "dotoday-dc736.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:38865657408:android:ff62986e034bfcc39c89a5",
+        "android_client_info": {
+          "package_name": "com.example.dotoday"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIfVupleiqfT3eaMEroqTGhyq2XauwAMk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

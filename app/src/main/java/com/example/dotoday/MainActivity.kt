@@ -1,5 +1,7 @@
 package com.example.dotoday
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -10,11 +12,10 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.CalendarView
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.TimePicker
-import android.app.TimePickerDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,10 +26,11 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.materialswitch.MaterialSwitch
 import kotlinx.coroutines.launch
+import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -38,12 +40,18 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
+        private const val SCHEDULER_TAG = "DoTodayScheduler"
     }
+
+    // ==========================================
+    // DATA MODELS
+    // ==========================================
 
     data class DayInfo(
         val name: String,
         val fullName: String,
-        val number: String
+        val number: String,
+        val dateKey: String
     )
 
     sealed class TimelineEntry {
@@ -56,190 +64,60 @@ class MainActivity : AppCompatActivity() {
             val subtitle: String = "",
             val iconRes: Int = R.drawable.ic_alarm,
             var isCompleted: Boolean = false,
-            val isRepeat: Boolean = true
+            val isRepeat: Boolean = false
         ) : TimelineEntry()
 
         data class Interval(
             val times: List<String> = listOf("12:00", "16:00"),
-            val currentTime: String = "19:23",
-            val remainingText: String =
-                "2h 37m left — then, let's dive in!"
+            val currentTime: String = "",
+            val remainingText: String = ""
         ) : TimelineEntry()
     }
 
-    // Existing sample calendar dates
-    private val daysList: List<DayInfo>
-        get() {
-            val locale = resources.configuration.locales[0]
+    // ==========================================
+    // REAL CALENDAR DATA
+    // ==========================================
 
-            return (20..26).map { day ->
-                val cal = Calendar.getInstance().apply {
-                    set(2026, Calendar.SEPTEMBER, day)
-                }
+    private val dateKeyFormat = SimpleDateFormat(
+        "yyyy-MM-dd",
+        Locale.US
+    )
 
-                val shortName = SimpleDateFormat(
-                    "EEE",
-                    locale
-                ).format(cal.time)
+    private val dateHeaderFormat = SimpleDateFormat(
+        "d MMMM yyyy",
+        Locale.getDefault()
+    )
 
-                val fullName = SimpleDateFormat(
-                    "d MMMM yyyy",
-                    locale
-                ).format(cal.time) + " >"
+    private val weekdayFormat = SimpleDateFormat(
+        "EEE",
+        Locale.getDefault()
+    )
 
-                DayInfo(
-                    name = shortName,
-                    fullName = fullName,
-                    number = day.toString()
-                )
-            }
-        }
+    private var selectedDate: Calendar =
+        Calendar.getInstance()
 
-    private var selectedDayNumber = "22"
+    private var selectedDayNumber: String =
+        formatDateKey(selectedDate)
 
-    private lateinit var timelineAdapter: TimelineAdapter
-    private lateinit var inboxAdapter: InboxAdapter
+    private var daysList = emptyList<DayInfo>()
 
     private val dayViewsMap =
         mutableMapOf<String, Pair<View, TextView>>()
 
-    // Original in-memory timeline tasks
     private val tasksByDay =
-        mutableMapOf<String, MutableList<TimelineEntry>>(
+        mutableMapOf<String, MutableList<TimelineEntry>>()
 
-            "20" to mutableListOf(
-                TimelineEntry.Task(
-                    "1", "07:30", "08:00",
-                    "Morning Meditation", "15 mins focus",
-                    R.drawable.ic_alarm
-                ),
-                TimelineEntry.Interval(
-                    listOf("11:00", "15:00"),
-                    getCurrentTimeFormatted(),
-                    "3h 15m left — time to focus!"
-                ),
-                TimelineEntry.Task(
-                    "2", "21:30", "22:00",
-                    "Read Book", "20 pages",
-                    R.drawable.ic_moon
-                )
-            ),
+    // ==========================================
+    // ADAPTERS AND REPOSITORIES
+    // ==========================================
 
-            "21" to mutableListOf(
-                TimelineEntry.Task(
-                    "1", "08:00", "09:00",
-                    "Morning Jog", "Park run",
-                    R.drawable.ic_alarm
-                ),
-                TimelineEntry.Interval(
-                    listOf("12:00", "16:00"),
-                    getCurrentTimeFormatted(),
-                    "1h 45m left — stay energized!"
-                ),
-                TimelineEntry.Task(
-                    "2", "22:00", "22:30",
-                    "Wind Down", "Sleep preparation",
-                    R.drawable.ic_moon
-                )
-            ),
-
-            "22" to mutableListOf(
-                TimelineEntry.Task(
-                    "1", "08:00", "08:30",
-                    "Rise and Shine", "",
-                    R.drawable.ic_alarm,
-                    isRepeat = true
-                ),
-                TimelineEntry.Interval(
-                    listOf("12:00", "16:00"),
-                    "19:23",
-                    "2h 37m left — then, let's dive in!"
-                ),
-                TimelineEntry.Task(
-                    "2", "22:00", "22:30",
-                    "Wind Down", "",
-                    R.drawable.ic_moon,
-                    isRepeat = true
-                )
-            ),
-
-            "23" to mutableListOf(
-                TimelineEntry.Task(
-                    "1", "09:00", "10:00",
-                    "Team Standup", "Project sync",
-                    R.drawable.ic_timeline
-                ),
-                TimelineEntry.Interval(
-                    listOf("13:00", "17:00"),
-                    getCurrentTimeFormatted(),
-                    "4h 00m left — ready for next task"
-                ),
-                TimelineEntry.Task(
-                    "2", "21:45", "22:15",
-                    "Journal & Plan", "",
-                    R.drawable.ic_settings
-                )
-            ),
-
-            "24" to mutableListOf(
-                TimelineEntry.Task(
-                    "1", "08:15", "08:45",
-                    "Morning Stretch", "Flexibility routine",
-                    R.drawable.ic_alarm
-                ),
-                TimelineEntry.Interval(
-                    listOf("12:30", "16:30"),
-                    getCurrentTimeFormatted(),
-                    "2h 10m left — deep work time"
-                ),
-                TimelineEntry.Task(
-                    "2", "22:00", "22:30",
-                    "Wind Down", "",
-                    R.drawable.ic_moon
-                )
-            ),
-
-            "25" to mutableListOf(
-                TimelineEntry.Task(
-                    "1", "08:00", "09:00",
-                    "Workout & Breakfast", "",
-                    R.drawable.ic_alarm
-                ),
-                TimelineEntry.Interval(
-                    listOf("13:00", "17:00"),
-                    getCurrentTimeFormatted(),
-                    "3h 30m left — finish the week strong!"
-                ),
-                TimelineEntry.Task(
-                    "2", "22:30", "23:00",
-                    "Night Relaxation", "",
-                    R.drawable.ic_moon
-                )
-            ),
-
-            "26" to mutableListOf(
-                TimelineEntry.Task(
-                    "1", "09:30", "10:30",
-                    "Weekend Breakfast", "Family time",
-                    R.drawable.ic_alarm
-                ),
-                TimelineEntry.Interval(
-                    listOf("14:00", "18:00"),
-                    getCurrentTimeFormatted(),
-                    "5h 00m left — enjoy weekend!"
-                ),
-                TimelineEntry.Task(
-                    "2", "23:00", "23:30",
-                    "Late Rest", "",
-                    R.drawable.ic_moon
-                )
-            )
-        )
+    private lateinit var timelineAdapter: TimelineAdapter
+    private lateinit var inboxAdapter: InboxAdapter
 
     private val todoistRepository = TodoistRepository()
 
     // ==========================================
-    // APPLICATION STARTUP
+    // ACTIVITY LIFECYCLE
     // ==========================================
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -247,44 +125,49 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
+        // Firebase Cloud Messaging setup
+        FirebaseNotificationSetup.initialize(this)
+
+        // Local reminder notification channel
+        TaskReminderReceiver.createNotificationChannel(this)
+
+        // Initialize existing screens
         setupTimeline()
         setupCalendar()
         setupInbox()
         setupBottomNav()
 
+        // Calendar picker
         findViewById<View>(
             R.id.btn_calendar_picker
         )?.setOnClickListener {
             showCalendarPickerDialog()
         }
 
+        // Timeline add task
         findViewById<FloatingActionButton>(
             R.id.fab_add_task
         ).setOnClickListener {
             showAddTaskDialog()
         }
 
+        // Inbox task creation
         findViewById<View>(
             R.id.btn_new_inbox_task
-        ).setOnClickListener {
+        )?.setOnClickListener {
             showAddTodoistTaskDialog()
         }
 
         findViewById<View>(
             R.id.btn_new_inbox_task_bottom
-        ).setOnClickListener {
+        )?.setOnClickListener {
             showAddTodoistTaskDialog()
         }
 
+        // Logout
         findViewById<View>(
             R.id.btn_logout
-        ).setOnClickListener {
-
-            Snackbar.make(
-                it,
-                getString(R.string.general_logout_success),
-                Snackbar.LENGTH_SHORT
-            ).show()
+        )?.setOnClickListener {
 
             val intent = Intent(
                 this,
@@ -297,62 +180,159 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+
+        Log.d(TAG, "DoToday initialized successfully")
     }
 
     // ==========================================
-    // TIME FORMAT
+    // DATE HELPERS
     // ==========================================
 
+    private fun formatDateKey(
+        calendar: Calendar
+    ): String {
+        return dateKeyFormat.format(calendar.time)
+    }
+
+    private fun displayDate(
+        calendar: Calendar
+    ): String {
+        return dateHeaderFormat.format(calendar.time)
+    }
+
+    private fun calendarCopy(
+        calendar: Calendar
+    ): Calendar {
+        return calendar.clone() as Calendar
+    }
+
+    private fun calendarFromKey(
+        key: String
+    ): Calendar {
+        val result = Calendar.getInstance()
+
+        try {
+            val parsed = dateKeyFormat.parse(key)
+            if (parsed != null) {
+                result.time = parsed
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Invalid date key: $key", e)
+        }
+
+        return result
+    }
+
+    private fun createWeekDays(
+        calendar: Calendar
+    ): List<DayInfo> {
+
+        val monday = calendarCopy(calendar).apply {
+            firstDayOfWeek = Calendar.MONDAY
+            set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+        }
+
+        return (0 until 7).map { index ->
+
+            val day = calendarCopy(monday).apply {
+                add(Calendar.DAY_OF_MONTH, index)
+            }
+
+            DayInfo(
+                name = weekdayFormat.format(day.time),
+                fullName = displayDate(day),
+                number = day.get(
+                    Calendar.DAY_OF_MONTH
+                ).toString(),
+                dateKey = formatDateKey(day)
+            )
+        }
+    }
+
     private fun getCurrentTimeFormatted(): String {
-        val cal = Calendar.getInstance()
+        val now = Calendar.getInstance()
 
         return String.format(
-            Locale.ROOT,
+            Locale.getDefault(),
             "%02d:%02d",
-            cal.get(Calendar.HOUR_OF_DAY),
-            cal.get(Calendar.MINUTE)
+            now.get(Calendar.HOUR_OF_DAY),
+            now.get(Calendar.MINUTE)
         )
+    }
+
+    private fun getThemeColor(attr: Int): Int {
+        val typedValue = TypedValue()
+
+        theme.resolveAttribute(
+            attr,
+            typedValue,
+            true
+        )
+
+        return typedValue.data
+    }
+
+    private fun showMessage(message: String) {
+        Snackbar.make(
+            findViewById(R.id.main),
+            message,
+            Snackbar.LENGTH_SHORT
+        ).show()
     }
 
     // ==========================================
     // TIMELINE SETUP
     // ==========================================
 
-    private fun setupTimeline(): TimelineAdapter {
+    private fun setupTimeline() {
 
-        val rv = findViewById<RecyclerView>(
-            R.id.rv_timeline
-        )
+        val recyclerView =
+            findViewById<RecyclerView>(
+                R.id.rv_timeline
+            )
 
-        rv.layoutManager = LinearLayoutManager(this)
-
-        val initialEntries =
-            tasksByDay[selectedDayNumber] ?: mutableListOf()
+        recyclerView.layoutManager =
+            LinearLayoutManager(this)
 
         timelineAdapter = TimelineAdapter(
-            items = initialEntries.toMutableList(),
-
+            items = mutableListOf(),
             onAddTaskClicked = {
                 showAddTaskDialog()
             },
-
             onTaskToggleCompleted = { task ->
-                Log.i(
-                    TAG,
-                    "Task completion updated: ${task.isCompleted}"
-                )
+
+                if (task.isCompleted) {
+
+                    TaskReminderScheduler.cancelReminder(
+                        context = this,
+                        taskId = task.id.hashCode()
+                    )
+
+                    Log.d(
+                        SCHEDULER_TAG,
+                        "Cancelled completed task reminder: ${task.title}"
+                    )
+
+                } else {
+
+                    // Re-enabling a completed task requires
+                    // its original due timestamp. That will
+                    // be restored through persistent storage.
+                    Log.d(
+                        SCHEDULER_TAG,
+                        "Task reopened: ${task.title}"
+                    )
+                }
 
                 timelineAdapter.notifyDataSetChanged()
             }
         )
 
-        rv.adapter = timelineAdapter
-
-        return timelineAdapter
+        recyclerView.adapter = timelineAdapter
     }
 
     // ==========================================
-    // CALENDAR SETUP
+    // HORIZONTAL WEEK CALENDAR
     // ==========================================
 
     private fun setupCalendar() {
@@ -364,43 +344,51 @@ class MainActivity : AppCompatActivity() {
         container.removeAllViews()
         dayViewsMap.clear()
 
+        daysList = createWeekDays(selectedDate)
+
         val inflater = LayoutInflater.from(this)
 
         daysList.forEach { dayInfo ->
 
-            val view = inflater.inflate(
+            val dayView = inflater.inflate(
                 R.layout.item_calendar_day,
                 container,
                 false
             )
 
-            view.findViewById<TextView>(
-                R.id.tv_day_name
-            ).text = dayInfo.name
+            val tvDayName =
+                dayView.findViewById<TextView>(
+                    R.id.tv_day_name
+                )
 
-            val tvNumber = view.findViewById<TextView>(
-                R.id.tv_day_number
+            val tvDayNumber =
+                dayView.findViewById<TextView>(
+                    R.id.tv_day_number
+                )
+
+            tvDayName.text = dayInfo.name
+            tvDayNumber.text = dayInfo.number
+
+            dayViewsMap[dayInfo.dateKey] =
+                Pair(dayView, tvDayNumber)
+
+            updateDayDots(
+                dayInfo.dateKey,
+                dayView
             )
 
-            tvNumber.text = dayInfo.number
-
-            dayViewsMap[dayInfo.number] =
-                Pair(view, tvNumber)
-
-            updateDayDots(dayInfo.number, view)
-
-            view.setOnClickListener {
+            dayView.setOnClickListener {
                 selectCalendarDay(
                     dayInfo,
                     animate = true
                 )
             }
 
-            container.addView(view)
+            container.addView(dayView)
         }
 
         daysList.find {
-            it.number == selectedDayNumber
+            it.dateKey == selectedDayNumber
         }?.let {
             selectCalendarDay(
                 it,
@@ -410,50 +398,48 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ==========================================
-    // CALENDAR TASK INDICATORS
+    // CALENDAR TASK INDICATOR DOTS
     // ==========================================
 
     private fun updateDayDots(
-        dayNumber: String,
+        dateKey: String,
         dayView: View
     ) {
 
         val entries =
-            tasksByDay[dayNumber] ?: emptyList()
+            tasksByDay[dateKey] ?: emptyList()
 
-        val taskCount = entries.count {
+        val tasksCount = entries.count {
             it is TimelineEntry.Task
         }
 
-        val dot1 = dayView.findViewById<View>(
-            R.id.dot1
-        )
+        val dot1 =
+            dayView.findViewById<View>(R.id.dot1)
 
-        val dot2 = dayView.findViewById<View>(
-            R.id.dot2
-        )
+        val dot2 =
+            dayView.findViewById<View>(R.id.dot2)
 
         when {
 
-            taskCount >= 2 -> {
-                dot1.visibility = View.VISIBLE
-                dot2.visibility = View.VISIBLE
+            tasksCount >= 2 -> {
+                dot1?.visibility = View.VISIBLE
+                dot2?.visibility = View.VISIBLE
             }
 
-            taskCount == 1 -> {
-                dot1.visibility = View.VISIBLE
-                dot2.visibility = View.GONE
+            tasksCount == 1 -> {
+                dot1?.visibility = View.VISIBLE
+                dot2?.visibility = View.GONE
             }
 
             else -> {
-                dot1.visibility = View.GONE
-                dot2.visibility = View.GONE
+                dot1?.visibility = View.GONE
+                dot2?.visibility = View.GONE
             }
         }
     }
 
     // ==========================================
-    // CALENDAR DAY SELECTION
+    // SELECT CALENDAR DAY
     // ==========================================
 
     private fun selectCalendarDay(
@@ -461,17 +447,21 @@ class MainActivity : AppCompatActivity() {
         animate: Boolean
     ) {
 
-        selectedDayNumber = dayInfo.number
+        selectedDayNumber = dayInfo.dateKey
+
+        selectedDate =
+            calendarFromKey(dayInfo.dateKey)
 
         findViewById<TextView>(
             R.id.tv_month_year
-        )?.text = dayInfo.fullName
+        )?.text = "${dayInfo.fullName} >"
 
-        dayViewsMap.forEach { (number, pair) ->
+        dayViewsMap.forEach { (key, pair) ->
 
-            val (view, tvNumber) = pair
+            val dayView = pair.first
+            val tvNumber = pair.second
 
-            if (number == dayInfo.number) {
+            if (key == selectedDayNumber) {
 
                 tvNumber.setBackgroundResource(
                     R.drawable.shape_circle_small
@@ -488,12 +478,13 @@ class MainActivity : AppCompatActivity() {
 
                 if (animate) {
 
-                    view.animate()
+                    dayView.animate()
                         .scaleX(1.15f)
                         .scaleY(1.15f)
                         .setDuration(120)
                         .withEndAction {
-                            view.animate()
+
+                            dayView.animate()
                                 .scaleX(1f)
                                 .scaleY(1f)
                                 .setDuration(120)
@@ -508,48 +499,34 @@ class MainActivity : AppCompatActivity() {
 
                 tvNumber.setTextColor(
                     getThemeColor(
-                        com.google.android.material.R.attr.colorOnSurface
+                        com.google.android.material.R.attr
+                            .colorOnSurface
                     )
                 )
             }
         }
 
         val entries =
-            tasksByDay[dayInfo.number] ?: mutableListOf()
+            tasksByDay[selectedDayNumber]
+                ?: mutableListOf()
 
         timelineAdapter.updateEntries(entries)
 
         if (
-            entries.none { it is TimelineEntry.Task } &&
-            animate
+            animate &&
+            entries.none {
+                it is TimelineEntry.Task
+            }
         ) {
 
-            Snackbar.make(
-                findViewById(R.id.main),
-                getString(
-                    R.string.calendar_empty_day,
-                    dayInfo.fullName
-                ),
-                Snackbar.LENGTH_SHORT
-            ).show()
+            showMessage(
+                "No tasks for ${dayInfo.fullName}. Tap + to add!"
+            )
         }
     }
 
-    private fun getThemeColor(attr: Int): Int {
-
-        val typedValue = TypedValue()
-
-        theme.resolveAttribute(
-            attr,
-            typedValue,
-            true
-        )
-
-        return typedValue.data
-    }
-
     // ==========================================
-    // FULL CALENDAR DIALOG
+    // FULL CALENDAR PICKER
     // ==========================================
 
     private fun showCalendarPickerDialog() {
@@ -583,31 +560,22 @@ class MainActivity : AppCompatActivity() {
         rvPreview.layoutManager =
             LinearLayoutManager(this)
 
-        var dialogSelectedDayNumber =
-            selectedDayNumber
+        var dialogSelectedDate =
+            calendarCopy(selectedDate)
 
-        var dialogSelectedFullName =
-            daysList.find {
-                it.number == selectedDayNumber
-            }?.fullName ?: selectedDayNumber
+        fun updatePreview() {
 
-        fun updateDialogTaskPreview(
-            dayNumber: String,
-            fullName: String
-        ) {
+            val key =
+                formatDateKey(dialogSelectedDate)
 
-            tvHeader.text = getString(
-                R.string.calendar_tasks_for,
-                fullName
-            )
+            val tasks = (
+                    tasksByDay[key] ?: emptyList()
+                    ).filterIsInstance<TimelineEntry.Task>()
 
-            val entries =
-                tasksByDay[dayNumber] ?: emptyList()
+            tvHeader.text =
+                "Tasks for ${displayDate(dialogSelectedDate)}"
 
-            val tasksOnly =
-                entries.filterIsInstance<TimelineEntry.Task>()
-
-            if (tasksOnly.isEmpty()) {
+            if (tasks.isEmpty()) {
 
                 tvNoTasks.visibility = View.VISIBLE
                 rvPreview.visibility = View.GONE
@@ -618,95 +586,54 @@ class MainActivity : AppCompatActivity() {
                 rvPreview.visibility = View.VISIBLE
 
                 rvPreview.adapter =
-                    DialogTaskPreviewAdapter(tasksOnly)
+                    DialogTaskPreviewAdapter(tasks)
             }
         }
 
-        try {
+        calendarView.date =
+            dialogSelectedDate.timeInMillis
 
-            val cal = Calendar.getInstance().apply {
-                set(
-                    2026,
-                    Calendar.SEPTEMBER,
-                    dialogSelectedDayNumber.toIntOrNull() ?: 22
-                )
-            }
-
-            calendarView.date = cal.timeInMillis
-
-        } catch (e: Exception) {
-
-            Log.w(
-                TAG,
-                "Calendar initialization failed",
-                e
-            )
-        }
-
-        updateDialogTaskPreview(
-            dialogSelectedDayNumber,
-            dialogSelectedFullName
-        )
+        updatePreview()
 
         calendarView.setOnDateChangeListener {
                 _, year, month, dayOfMonth ->
 
-            dialogSelectedDayNumber =
-                dayOfMonth.toString()
+            dialogSelectedDate =
+                Calendar.getInstance().apply {
+                    set(
+                        year,
+                        month,
+                        dayOfMonth
+                    )
+                }
 
-            val cal = Calendar.getInstance().apply {
-                set(year, month, dayOfMonth)
-            }
-
-            val locale =
-                resources.configuration.locales[0]
-
-            dialogSelectedFullName =
-                SimpleDateFormat(
-                    "d MMMM yyyy",
-                    locale
-                ).format(cal.time) + " >"
-
-            updateDialogTaskPreview(
-                dialogSelectedDayNumber,
-                dialogSelectedFullName
-            )
+            updatePreview()
         }
 
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setView(dialogView)
-            .setPositiveButton(
-                R.string.calendar_view_timeline
-            ) { _, _ ->
+        val dialog =
+            MaterialAlertDialogBuilder(this)
+                .setView(dialogView)
+                .setPositiveButton(
+                    "View Timeline"
+                ) { _, _ ->
 
-                val dayInfo =
-                    daysList.find {
-                        it.number == dialogSelectedDayNumber
-                    } ?: DayInfo(
-                        "",
-                        dialogSelectedFullName,
-                        dialogSelectedDayNumber
+                    selectedDate =
+                        calendarCopy(dialogSelectedDate)
+
+                    selectedDayNumber =
+                        formatDateKey(selectedDate)
+
+                    setupCalendar()
+
+                    showMessage(
+                        "Switched to ${displayDate(selectedDate)}"
                     )
-
-                selectCalendarDay(
-                    dayInfo,
-                    animate = true
+                }
+                .setNegativeButton(
+                    "Close",
+                    null
                 )
-
-                Snackbar.make(
-                    findViewById(R.id.main),
-                    getString(
-                        R.string.calendar_switched,
-                        dialogSelectedFullName
-                    ),
-                    Snackbar.LENGTH_SHORT
-                ).show()
-            }
-            .setNegativeButton(
-                R.string.calendar_close,
-                null
-            )
-            .show()
+                .show()
 
         dialog.getButton(
             android.app.AlertDialog.BUTTON_POSITIVE
@@ -722,7 +649,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ==========================================
-    // ADD SCHEDULED TASK DIALOG
+    // CREATE A NEW TIMELINE TASK
     // ==========================================
 
     private fun showAddTaskDialog() {
@@ -778,14 +705,63 @@ class MainActivity : AppCompatActivity() {
                 R.id.et_repeat_duration
             )
 
-        // Translated frequency options
-        val frequencies = arrayOf(
-            getString(R.string.task_daily),
-            getString(R.string.task_weekly),
-            getString(R.string.task_monthly)
+        // ======================================
+        // DATE SELECTION
+        // ======================================
+
+        var selectedReminderDate =
+            calendarCopy(selectedDate)
+
+        val dateButton = MaterialButton(this).apply {
+
+            text = DateFormat.getDateInstance(
+                DateFormat.LONG
+            ).format(selectedReminderDate.time)
+
+            setOnClickListener {
+
+                val date = selectedReminderDate
+
+                DatePickerDialog(
+                    this@MainActivity,
+                    { _, year, month, day ->
+
+                        selectedReminderDate =
+                            Calendar.getInstance().apply {
+                                set(
+                                    year,
+                                    month,
+                                    day
+                                )
+                            }
+
+                        text = DateFormat.getDateInstance(
+                            DateFormat.LONG
+                        ).format(
+                            selectedReminderDate.time
+                        )
+                    },
+                    date.get(Calendar.YEAR),
+                    date.get(Calendar.MONTH),
+                    date.get(Calendar.DAY_OF_MONTH)
+                ).show()
+            }
+        }
+
+        (dialogView as LinearLayout).addView(
+            dateButton,
+            1
         )
 
-        var selectedFrequencyIndex = 0
+        // ======================================
+        // REPEAT OPTIONS
+        // ======================================
+
+        val frequencies = arrayOf(
+            "Daily",
+            "Weekly",
+            "Monthly"
+        )
 
         val frequencyAdapter = ArrayAdapter(
             this,
@@ -793,74 +769,88 @@ class MainActivity : AppCompatActivity() {
             frequencies
         )
 
-        spinnerFrequency.setAdapter(frequencyAdapter)
+        spinnerFrequency.setAdapter(
+            frequencyAdapter
+        )
 
         spinnerFrequency.setText(
             frequencies[0],
             false
         )
 
-        spinnerFrequency.setOnClickListener {
-            spinnerFrequency.showDropDown()
-        }
-
-        spinnerFrequency.setOnItemClickListener {
-                _, _, position, _ ->
-
-            selectedFrequencyIndex = position
-        }
-
         switchRepeat.setOnCheckedChangeListener {
                 _, isChecked ->
 
             layoutRepeatDetails.visibility =
-                if (isChecked) View.VISIBLE else View.GONE
+                if (isChecked) {
+                    View.VISIBLE
+                } else {
+                    View.GONE
+                }
         }
 
-        var selectedHour = 8
-        var selectedMinute = 0
+        // ======================================
+        // TIME SELECTION
+        // ======================================
 
-        var endHour = 8
-        var endMinute = 30
+        val now = Calendar.getInstance()
+
+        var selectedHour =
+            now.get(Calendar.HOUR_OF_DAY)
+
+        var selectedMinute =
+            now.get(Calendar.MINUTE)
+
+        var endHour = (selectedHour + 1) % 24
+        var endMinute = selectedMinute
 
         fun updateDuration() {
 
-            val startCal = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, selectedHour)
-                set(Calendar.MINUTE, selectedMinute)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
+            val startMinutes =
+                selectedHour * 60 + selectedMinute
+
+            val finishMinutes =
+                endHour * 60 + endMinute
+
+            var difference =
+                finishMinutes - startMinutes
+
+            if (difference < 0) {
+                difference += 24 * 60
             }
 
-            val endCal = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, endHour)
-                set(Calendar.MINUTE, endMinute)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-
-            if (endCal.before(startCal)) {
-                endCal.add(Calendar.DAY_OF_YEAR, 1)
-            }
-
-            val difference =
-                (endCal.timeInMillis - startCal.timeInMillis) /
-                        (60 * 1000)
-
-            etDuration.setText(difference.toString())
+            etDuration.setText(
+                difference.toString()
+            )
         }
+
+        btnPickTime.text = String.format(
+            Locale.getDefault(),
+            "%02d:%02d",
+            selectedHour,
+            selectedMinute
+        )
+
+        btnPickEndTime.text = String.format(
+            Locale.getDefault(),
+            "%02d:%02d",
+            endHour,
+            endMinute
+        )
+
+        updateDuration()
 
         btnPickTime.setOnClickListener {
 
             TimePickerDialog(
                 this,
-                { _: TimePicker, hour: Int, minute: Int ->
+                { _, hour, minute ->
 
                     selectedHour = hour
                     selectedMinute = minute
 
                     btnPickTime.text = String.format(
-                        Locale.ROOT,
+                        Locale.getDefault(),
                         "%02d:%02d",
                         hour,
                         minute
@@ -878,13 +868,13 @@ class MainActivity : AppCompatActivity() {
 
             TimePickerDialog(
                 this,
-                { _: TimePicker, hour: Int, minute: Int ->
+                { _, hour, minute ->
 
                     endHour = hour
                     endMinute = minute
 
                     btnPickEndTime.text = String.format(
-                        Locale.ROOT,
+                        Locale.getDefault(),
                         "%02d:%02d",
                         hour,
                         minute
@@ -898,77 +888,114 @@ class MainActivity : AppCompatActivity() {
             ).show()
         }
 
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setView(dialogView)
-            .setPositiveButton(
-                R.string.task_add
-            ) { _, _ ->
+        // ======================================
+        // ADD TASK DIALOG
+        // ======================================
+
+        val dialog =
+            MaterialAlertDialogBuilder(this)
+                .setView(dialogView)
+                .setPositiveButton("Add", null)
+                .setNegativeButton(
+                    "Cancel",
+                    null
+                )
+                .create()
+
+        dialog.setOnShowListener {
+
+            dialog.getButton(
+                android.app.AlertDialog.BUTTON_POSITIVE
+            ).setOnClickListener {
 
                 val title =
-                    etTitle.text?.toString()?.trim().orEmpty()
+                    etTitle.text.toString().trim()
 
                 val description =
-                    etDescription.text?.toString().orEmpty()
+                    etDescription.text.toString().trim()
 
-                if (title.isBlank()) {
+                if (title.isEmpty()) {
 
-                    Snackbar.make(
-                        findViewById(R.id.main),
-                        getString(R.string.task_required),
-                        Snackbar.LENGTH_SHORT
-                    ).show()
+                    etTitle.error =
+                        "Task title is required"
+
+                    return@setOnClickListener
+                }
+
+                val startTime = String.format(
+                    Locale.getDefault(),
+                    "%02d:%02d",
+                    selectedHour,
+                    selectedMinute
+                )
+
+                val endTime = String.format(
+                    Locale.getDefault(),
+                    "%02d:%02d",
+                    endHour,
+                    endMinute
+                )
+
+                val isRepeat =
+                    switchRepeat.isChecked
+
+                val repeatCount = if (isRepeat) {
+
+                    (
+                            etRepeatDuration.text.toString()
+                                .toIntOrNull() ?: 1
+                            ).coerceIn(1, 365)
 
                 } else {
+                    1
+                }
 
-                    val startTime = String.format(
-                        Locale.ROOT,
-                        "%02d:%02d",
-                        selectedHour,
-                        selectedMinute
-                    )
+                val frequency =
+                    spinnerFrequency.text.toString()
+                        .trim()
+                        .lowercase(Locale.ROOT)
 
-                    val endTime = String.format(
-                        Locale.ROOT,
-                        "%02d:%02d",
-                        endHour,
-                        endMinute
-                    )
+                val baseDate =
+                    calendarCopy(selectedReminderDate)
 
-                    val isRepeat = switchRepeat.isChecked
+                var createdCount = 0
+                var scheduledCount = 0
 
-                    val startDay =
-                        selectedDayNumber.toIntOrNull() ?: 22
+                // ==================================
+                // CREATE TASK OCCURRENCES
+                // ==================================
 
-                    val repeatCount =
-                        if (isRepeat) {
-                            (
-                                    etRepeatDuration.text
-                                        ?.toString()
-                                        ?.toIntOrNull() ?: 7
-                                    ).coerceIn(1, 365)
-                        } else {
-                            1
+                for (index in 0 until repeatCount) {
+
+                    val occurrence =
+                        calendarCopy(baseDate)
+
+                    if (isRepeat) {
+
+                        when (frequency) {
+
+                            "weekly" -> occurrence.add(
+                                Calendar.WEEK_OF_YEAR,
+                                index
+                            )
+
+                            "monthly" -> occurrence.add(
+                                Calendar.MONTH,
+                                index
+                            )
+
+                            else -> occurrence.add(
+                                Calendar.DAY_OF_YEAR,
+                                index
+                            )
                         }
-
-                    val step =
-                        if (selectedFrequencyIndex == 1) 7
-                        else 1
-
-                    val targetDays = mutableListOf<String>()
-
-                    for (i in 0 until repeatCount) {
-
-                        val dayNumber =
-                            startDay + (i * step)
-
-                        targetDays.add(
-                            dayNumber.toString()
-                        )
                     }
 
-                    targetDays.forEach { dayNumber ->
+                    val occurrenceKey =
+                        formatDateKey(occurrence)
 
-                        val newTask = TimelineEntry.Task(
+                    val newTask =
+                        TimelineEntry.Task(
                             time = startTime,
                             endTime = endTime,
                             title = title,
@@ -977,97 +1004,75 @@ class MainActivity : AppCompatActivity() {
                             isRepeat = isRepeat
                         )
 
-                        val currentEntries =
-                            tasksByDay.getOrPut(dayNumber) {
-                                mutableListOf()
-                            }
-
-                        val lastTaskIndex =
-                            currentEntries.indexOfLast {
-                                it is TimelineEntry.Task
-                            }
-
-                        val insertIndex =
-                            if (lastTaskIndex >= 0) {
-                                lastTaskIndex + 1
-                            } else {
-                                currentEntries.size
-                            }
-
-                        currentEntries.add(
-                            insertIndex,
-                            newTask
-                        )
-
-                        dayViewsMap[dayNumber]
-                            ?.first
-                            ?.let { dayView ->
-                                updateDayDots(
-                                    dayNumber,
-                                    dayView
-                                )
-                            }
-                    }
-
-                    val currentEntries =
-                        tasksByDay[selectedDayNumber]
-                            ?: mutableListOf()
-
-                    timelineAdapter.updateEntries(
-                        currentEntries
-                    )
-
-                    // Translated completion message
-                    val snackbarMessage =
-                        if (isRepeat && repeatCount > 1) {
-
-                            val unit =
-                                if (selectedFrequencyIndex == 1) {
-                                    getString(R.string.task_weeks)
-                                } else {
-                                    getString(R.string.task_days)
-                                }
-
-                            getString(
-                                R.string.task_repeated,
-                                title,
-                                repeatCount,
-                                unit
-                            )
-
-                        } else {
-
-                            getString(
-                                R.string.task_added_day,
-                                title,
-                                selectedDayNumber
-                            )
+                    val entries =
+                        tasksByDay.getOrPut(
+                            occurrenceKey
+                        ) {
+                            mutableListOf()
                         }
 
-                    Snackbar.make(
-                        findViewById(R.id.main),
-                        snackbarMessage,
-                        Snackbar.LENGTH_SHORT
-                    ).show()
+                    entries.add(newTask)
+
+                    createdCount++
+
+                    // ==================================
+                    // SCHEDULE REMINDER
+                    // ==================================
+
+                    val reminderScheduled =
+                        TaskReminderDateHelper.scheduleTask(
+                            context = this@MainActivity,
+                            taskTitle = title,
+                            date = occurrence,
+                            hour = selectedHour,
+                            minute = selectedMinute,
+                            taskId = newTask.id.hashCode()
+                        )
+
+                    if (reminderScheduled) {
+                        scheduledCount++
+                    }
+
+                    Log.d(
+                        SCHEDULER_TAG,
+                        "Task: $title | Date: $occurrenceKey | Reminder: $reminderScheduled"
+                    )
                 }
+
+                // ==================================
+                // REFRESH TIMELINE
+                // ==================================
+
+                selectedDate =
+                    calendarCopy(baseDate)
+
+                selectedDayNumber =
+                    formatDateKey(selectedDate)
+
+                setupCalendar()
+
+                showMessage(
+                    "$createdCount task occurrence(s) added. " +
+                            "$scheduledCount reminder(s) scheduled."
+                )
+
+                dialog.dismiss()
             }
-            .setNegativeButton(
-                R.string.task_cancel,
-                null
+
+            dialog.getButton(
+                android.app.AlertDialog.BUTTON_POSITIVE
+            )?.setTextColor(
+                getColor(R.color.app_secondary)
             )
-            .show()
 
-        dialog.getButton(
-            android.app.AlertDialog.BUTTON_POSITIVE
-        )?.setTextColor(
-            getColor(R.color.app_secondary)
-        )
+            dialog.getButton(
+                android.app.AlertDialog.BUTTON_NEGATIVE
+            )?.setTextColor(
+                getColor(R.color.text_secondary_color)
+            )
+        }
 
-        dialog.getButton(
-            android.app.AlertDialog.BUTTON_NEGATIVE
-        )?.setTextColor(
-            getColor(R.color.text_secondary_color)
-        )
+        dialog.show()
     }
 
     // ==========================================
@@ -1076,9 +1081,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupBottomNav() {
 
-        val nav = findViewById<BottomNavigationView>(
-            R.id.bottom_navigation
-        )
+        val nav =
+            findViewById<BottomNavigationView>(
+                R.id.bottom_navigation
+            )
 
         nav.selectedItemId = R.id.nav_timeline
 
@@ -1112,19 +1118,16 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
 
                 R.id.nav_timeline -> {
-
                     rvTimeline.visibility = View.VISIBLE
                     true
                 }
 
                 R.id.nav_notes -> {
-
                     layoutNotes.visibility = View.VISIBLE
                     true
                 }
 
                 R.id.nav_inbox -> {
-
                     layoutInbox.visibility = View.VISIBLE
                     fetchTodoistTasks()
                     true
@@ -1143,16 +1146,9 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 else -> {
-
-                    Snackbar.make(
-                        nav,
-                        getString(
-                            R.string.general_section_soon,
-                            item.title.toString()
-                        ),
-                        Snackbar.LENGTH_SHORT
-                    ).show()
-
+                    showMessage(
+                        "${item.title} coming soon"
+                    )
                     true
                 }
             }
@@ -1160,56 +1156,58 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ==========================================
-    // INBOX INITIALIZATION
+    // INBOX SETUP
     // ==========================================
 
     private fun setupInbox() {
 
-        val rv = findViewById<RecyclerView>(
-            R.id.rv_inbox
-        )
+        val recyclerView =
+            findViewById<RecyclerView>(
+                R.id.rv_inbox
+            )
 
-        rv.layoutManager = LinearLayoutManager(this)
+        recyclerView.layoutManager =
+            LinearLayoutManager(this)
 
-        inboxAdapter = InboxAdapter(
-            mutableListOf()
-        )
+        inboxAdapter =
+            InboxAdapter(mutableListOf())
 
-        rv.adapter = inboxAdapter
+        recyclerView.adapter = inboxAdapter
     }
-
-    // ==========================================
-    // FETCH TODOIST TASKS
-    // ==========================================
 
     private fun fetchTodoistTasks() {
 
-        val loading = findViewById<ProgressBar>(
-            R.id.pb_inbox_loading
-        )
+        val progressBar =
+            findViewById<ProgressBar>(
+                R.id.pb_inbox_loading
+            )
 
-        val rv = findViewById<RecyclerView>(
-            R.id.rv_inbox
-        )
+        val recyclerView =
+            findViewById<RecyclerView>(
+                R.id.rv_inbox
+            )
 
-        val emptyState = findViewById<View>(
-            R.id.layout_inbox_empty
-        )
+        val emptyState =
+            findViewById<View>(
+                R.id.layout_inbox_empty
+            )
 
-        val bottomButton = findViewById<View>(
-            R.id.btn_new_inbox_task_bottom
-        )
+        val btnBottom =
+            findViewById<View>(
+                R.id.btn_new_inbox_task_bottom
+            )
 
-        loading.visibility = View.VISIBLE
-        rv.visibility = View.GONE
+        progressBar.visibility = View.VISIBLE
+        recyclerView.visibility = View.GONE
         emptyState.visibility = View.GONE
-        bottomButton.visibility = View.GONE
+        btnBottom.visibility = View.GONE
 
         lifecycleScope.launch {
 
-            val result = todoistRepository.getTasks()
+            val result =
+                todoistRepository.getTasks()
 
-            loading.visibility = View.GONE
+            progressBar.visibility = View.GONE
 
             result.onSuccess { tasks ->
 
@@ -1220,35 +1218,29 @@ class MainActivity : AppCompatActivity() {
                 } else {
 
                     inboxAdapter.updateTasks(tasks)
-
-                    rv.visibility = View.VISIBLE
-                    bottomButton.visibility = View.VISIBLE
+                    recyclerView.visibility = View.VISIBLE
+                    btnBottom.visibility = View.VISIBLE
                 }
 
             }.onFailure { error ->
 
                 Log.e(
                     TAG,
-                    "Failed to fetch Todoist tasks",
+                    "Failed to fetch Inbox tasks",
                     error
                 )
 
                 emptyState.visibility = View.VISIBLE
 
-                Snackbar.make(
-                    rv,
-                    getString(
-                        R.string.inbox_fetch_error,
-                        error.message ?: ""
-                    ),
-                    Snackbar.LENGTH_LONG
-                ).show()
+                showMessage(
+                    "Failed to fetch tasks: ${error.message}"
+                )
             }
         }
     }
 
     // ==========================================
-    // ADD TODOIST TASK DIALOG
+    // ADD INBOX TASK
     // ==========================================
 
     private fun showAddTodoistTaskDialog() {
@@ -1279,63 +1271,33 @@ class MainActivity : AppCompatActivity() {
 
         dialogView.findViewById<TextView>(
             R.id.tv_dialog_title
-        )?.text = getString(
-            R.string.inbox_dialog_title
-        )
+        )?.text = "New Inbox Task"
 
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(
-                R.string.inbox_dialog_title
-            )
+        MaterialAlertDialogBuilder(this)
+            .setTitle("New Inbox Task")
             .setView(dialogView)
-            .setPositiveButton(
-                R.string.task_add
-            ) { _, _ ->
+            .setPositiveButton("Add") { _, _ ->
 
                 val title =
-                    etTitle.text?.toString()?.trim().orEmpty()
+                    etTitle.text.toString().trim()
 
                 val description =
-                    etDescription.text?.toString().orEmpty()
+                    etDescription.text.toString().trim()
 
-                if (title.isNotBlank()) {
+                if (title.isNotEmpty()) {
 
                     addNewTodoistTask(
                         title,
                         description
                     )
-
-                } else {
-
-                    Snackbar.make(
-                        findViewById(R.id.main),
-                        getString(R.string.task_required),
-                        Snackbar.LENGTH_SHORT
-                    ).show()
                 }
             }
             .setNegativeButton(
-                R.string.task_cancel,
+                "Cancel",
                 null
             )
             .show()
-
-        dialog.getButton(
-            android.app.AlertDialog.BUTTON_POSITIVE
-        )?.setTextColor(
-            getColor(R.color.app_secondary)
-        )
-
-        dialog.getButton(
-            android.app.AlertDialog.BUTTON_NEGATIVE
-        )?.setTextColor(
-            getColor(R.color.text_secondary_color)
-        )
     }
-
-    // ==========================================
-    // CREATE TODOIST TASK
-    // ==========================================
 
     private fun addNewTodoistTask(
         title: String,
@@ -1344,37 +1306,31 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
 
-            val result = todoistRepository.addTask(
-                title,
-                description
-            )
+            val result =
+                todoistRepository.addTask(
+                    title,
+                    description
+                )
 
             result.onSuccess {
 
                 fetchTodoistTasks()
 
-                Snackbar.make(
-                    findViewById(R.id.main),
-                    getString(R.string.inbox_add_success),
-                    Snackbar.LENGTH_SHORT
-                ).show()
+                showMessage(
+                    "Task added to Todoist"
+                )
 
             }.onFailure { error ->
 
                 Log.e(
                     TAG,
-                    "Failed to add Todoist task",
+                    "Failed to create Inbox task",
                     error
                 )
 
-                Snackbar.make(
-                    findViewById(R.id.main),
-                    getString(
-                        R.string.inbox_add_error,
-                        error.message ?: ""
-                    ),
-                    Snackbar.LENGTH_LONG
-                ).show()
+                showMessage(
+                    "Failed to add task: ${error.message}"
+                )
             }
         }
     }
@@ -1387,15 +1343,19 @@ class MainActivity : AppCompatActivity() {
         private val tasks: MutableList<TodoistTask>
     ) : RecyclerView.Adapter<InboxAdapter.ViewHolder>() {
 
-        fun updateTasks(newTasks: List<TodoistTask>) {
+        fun updateTasks(
+            newTasks: List<TodoistTask>
+        ) {
 
             tasks.clear()
             tasks.addAll(newTasks)
+
             notifyDataSetChanged()
         }
 
-        class ViewHolder(view: View) :
-            RecyclerView.ViewHolder(view) {
+        class ViewHolder(
+            view: View
+        ) : RecyclerView.ViewHolder(view) {
 
             val tvContent: TextView =
                 view.findViewById(
@@ -1447,16 +1407,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ==========================================
-    // CALENDAR TASK PREVIEW ADAPTER
+    // CALENDAR PREVIEW ADAPTER
     // ==========================================
 
     class DialogTaskPreviewAdapter(
         private val tasks: List<TimelineEntry.Task>
     ) : RecyclerView.Adapter<
-            DialogTaskPreviewAdapter.ViewHolder>() {
+            DialogTaskPreviewAdapter.ViewHolder
+            >() {
 
-        class ViewHolder(view: View) :
-            RecyclerView.ViewHolder(view) {
+        class ViewHolder(
+            view: View
+        ) : RecyclerView.ViewHolder(view) {
 
             val tvContent: TextView =
                 view.findViewById(
@@ -1495,7 +1457,8 @@ class MainActivity : AppCompatActivity() {
             holder.tvContent.text =
                 "${task.time} - ${task.title}"
 
-            holder.tvDescription.text = task.subtitle
+            holder.tvDescription.text =
+                task.subtitle
 
             holder.tvDescription.visibility =
                 if (task.subtitle.isEmpty()) {
@@ -1531,6 +1494,7 @@ class MainActivity : AppCompatActivity() {
 
             items.clear()
             items.addAll(newEntries)
+
             notifyDataSetChanged()
         }
 
@@ -1540,11 +1504,8 @@ class MainActivity : AppCompatActivity() {
 
             return when (items[position]) {
 
-                is TimelineEntry.Task ->
-                    TYPE_TASK
-
-                is TimelineEntry.Interval ->
-                    TYPE_INTERVAL
+                is TimelineEntry.Task -> TYPE_TASK
+                is TimelineEntry.Interval -> TYPE_INTERVAL
             }
         }
 
@@ -1588,18 +1549,18 @@ class MainActivity : AppCompatActivity() {
                 is TimelineEntry.Task -> {
 
                     (holder as TaskViewHolder).bind(
-                        entry,
-                        position == 0,
-                        position == items.size - 1,
-                        onTaskToggleCompleted
+                        task = entry,
+                        isFirst = position == 0,
+                        isLast = position == items.size - 1,
+                        onToggle = onTaskToggleCompleted
                     )
                 }
 
                 is TimelineEntry.Interval -> {
 
                     (holder as IntervalViewHolder).bind(
-                        entry,
-                        onAddTaskClicked
+                        interval = entry,
+                        onAddClicked = onAddTaskClicked
                     )
                 }
             }
@@ -1608,39 +1569,58 @@ class MainActivity : AppCompatActivity() {
         override fun getItemCount(): Int =
             items.size
 
-        // ==========================================
+        // ======================================
         // TASK VIEW HOLDER
-        // ==========================================
+        // ======================================
 
-        class TaskViewHolder(view: View) :
-            RecyclerView.ViewHolder(view) {
+        class TaskViewHolder(
+            view: View
+        ) : RecyclerView.ViewHolder(view) {
 
             private val tvTimeLeft: TextView =
-                view.findViewById(R.id.tv_time_left)
+                view.findViewById(
+                    R.id.tv_time_left
+                )
 
             private val tvTaskTime: TextView =
-                view.findViewById(R.id.tv_task_time)
+                view.findViewById(
+                    R.id.tv_task_time
+                )
 
             private val tvTaskTitle: TextView =
-                view.findViewById(R.id.tv_task_title)
+                view.findViewById(
+                    R.id.tv_task_title
+                )
 
             private val tvTaskSubtitle: TextView =
-                view.findViewById(R.id.tv_task_subtitle)
+                view.findViewById(
+                    R.id.tv_task_subtitle
+                )
 
-            private val ivIcon: android.widget.ImageView =
-                view.findViewById(R.id.iv_icon)
+            private val ivIcon: ImageView =
+                view.findViewById(
+                    R.id.iv_icon
+                )
 
-            private val ivRepeat: android.widget.ImageView =
-                view.findViewById(R.id.iv_repeat)
+            private val ivRepeat: ImageView =
+                view.findViewById(
+                    R.id.iv_repeat
+                )
 
-            private val btnComplete: android.widget.ImageView =
-                view.findViewById(R.id.btn_complete)
+            private val btnComplete: ImageView =
+                view.findViewById(
+                    R.id.btn_complete
+                )
 
             private val lineTop: View =
-                view.findViewById(R.id.line_top)
+                view.findViewById(
+                    R.id.line_top
+                )
 
             private val lineBottom: View =
-                view.findViewById(R.id.line_bottom)
+                view.findViewById(
+                    R.id.line_bottom
+                )
 
             fun bind(
                 task: TimelineEntry.Task,
@@ -1716,7 +1696,7 @@ class MainActivity : AppCompatActivity() {
                                 android.graphics.Paint
                                     .STRIKE_THRU_TEXT_FLAG.inv()
 
-                    tvTaskTitle.alpha = 1.0f
+                    tvTaskTitle.alpha = 1f
                 }
 
                 btnComplete.setOnClickListener {
@@ -1729,12 +1709,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // ==========================================
+        // ======================================
         // INTERVAL VIEW HOLDER
-        // ==========================================
+        // ======================================
 
-        class IntervalViewHolder(view: View) :
-            RecyclerView.ViewHolder(view) {
+        class IntervalViewHolder(
+            view: View
+        ) : RecyclerView.ViewHolder(view) {
 
             private val tvRuler1: TextView =
                 view.findViewById(

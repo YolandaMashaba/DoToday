@@ -2,9 +2,31 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions -->
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- ======================================= -->
+    <!-- INTERNET AND NETWORK PERMISSIONS        -->
+    <!-- ======================================= -->
+
+    <uses-permission
+        android:name="android.permission.INTERNET" />
+
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- ======================================= -->
+    <!-- NOTIFICATION PERMISSIONS                -->
+    <!-- ======================================= -->
+
+    <!-- Required for Android 13 and above -->
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Allows notification vibration -->
+    <uses-permission
+        android:name="android.permission.VIBRATE" />
+
+    <!-- ======================================= -->
+    <!-- APPLICATION CONFIGURATION               -->
+    <!-- ======================================= -->
 
     <application
         android:allowBackup="true"
@@ -17,7 +39,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DoToday">
 
-        <!-- Login Activity: Application Entry Point -->
+        <!-- =================================== -->
+        <!-- LOGIN ACTIVITY                      -->
+        <!-- =================================== -->
+
         <activity
             android:name=".LoginActivity"
             android:exported="true"
@@ -25,29 +50,69 @@
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
+
+                <category
+                    android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
         </activity>
 
-        <!-- Settings Activity -->
-        <activity
-            android:name=".SettingsActivity"
-            android:exported="false" />
+        <!-- =================================== -->
+        <!-- REGISTRATION ACTIVITY               -->
+        <!-- =================================== -->
 
-        <!-- Registration Activity -->
         <activity
             android:name=".RegisterActivity"
             android:exported="false"
             android:theme="@style/Theme.DoToday" />
 
-        <!-- Main Dashboard Activity -->
+        <!-- =================================== -->
+        <!-- MAIN DASHBOARD ACTIVITY             -->
+        <!-- =================================== -->
+
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:theme="@style/Theme.DoToday" />
 
-        <!-- AppCompat Language Preference Storage -->
+        <!-- =================================== -->
+        <!-- SETTINGS ACTIVITY                   -->
+        <!-- =================================== -->
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DoToday" />
+
+        <!-- =================================== -->
+        <!-- FIREBASE CLOUD MESSAGING            -->
+        <!-- =================================== -->
+
+        <service
+            android:name=".DoTodayMessagingService"
+            android:enabled="true"
+            android:exported="false">
+
+            <intent-filter>
+                <action
+                    android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+
+        </service>
+
+        <!-- =================================== -->
+        <!-- LOCAL TASK REMINDER RECEIVER        -->
+        <!-- =================================== -->
+
+        <receiver
+            android:name=".TaskReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- =================================== -->
+        <!-- MULTI-LANGUAGE SUPPORT              -->
+        <!-- =================================== -->
+
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
             android:enabled="false"
