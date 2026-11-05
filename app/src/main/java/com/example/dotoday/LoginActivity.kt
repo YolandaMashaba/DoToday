@@ -9,6 +9,7 @@ import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -44,7 +45,8 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+        applySavedTheme()
+
         // Check if user is already logged in (e.g. after language locale restart)
         val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
         if (prefs.getBoolean(SettingsActivity.KEY_IS_LOGGED_IN, false)) {
@@ -69,6 +71,17 @@ class LoginActivity : AppCompatActivity() {
         btnGoToRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
+    }
+
+    private fun applySavedTheme() {
+        val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        val currentTheme = prefs.getString(SettingsActivity.KEY_THEME, "System Default")
+        val mode = when (currentTheme) {
+            "Light Mode" -> AppCompatDelegate.MODE_NIGHT_NO
+            "Dark Mode" -> AppCompatDelegate.MODE_NIGHT_YES
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        AppCompatDelegate.setDefaultNightMode(mode)
     }
 
     private fun attemptLogin() {
