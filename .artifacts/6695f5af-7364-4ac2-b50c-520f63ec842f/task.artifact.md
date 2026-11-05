@@ -1,0 +1,6 @@
+- [x] Add SSO login button to `activity_login.xml`
+- [x] Implement SSO login flow and logging in `LoginActivity.kt`
+- [x] Build local SQLite database helper (`DoTodayDbHelper.kt`) for offline mode and sync
+- [x] Refactor `TodoistRepository.kt` for offline-first caching and background API synchronization
+- [x] Ensure thread safety and ANR prevention with 5-second timeouts and `Dispatchers.IO`
+- [x] Verify build and unit tests (`app:assembleDebug`, `app:testDebugUnitTest`)
