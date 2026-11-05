@@ -130,6 +130,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applySavedTheme()
         setContentView(R.layout.activity_main)
         setupTimeline()
         setupCalendar()
@@ -155,6 +156,17 @@ class MainActivity : AppCompatActivity() {
     private fun getCurrentTimeFormatted(): String {
         val now = Calendar.getInstance()
         return String.format(Locale.ROOT, "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
+    }
+
+    private fun applySavedTheme() {
+        val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        val currentTheme = prefs.getString(SettingsActivity.KEY_THEME, "System Default")
+        val mode = when (currentTheme) {
+            "Light Mode" -> AppCompatDelegate.MODE_NIGHT_NO
+            "Dark Mode" -> AppCompatDelegate.MODE_NIGHT_YES
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        AppCompatDelegate.setDefaultNightMode(mode)
     }
 
     private fun setupTimeline() {
@@ -401,7 +413,6 @@ class MainActivity : AppCompatActivity() {
                             else LocaleListCompat.forLanguageTags(selectedCode)
             AppCompatDelegate.setApplicationLocales(appLocale)
             Toast.makeText(this, "Language updated", Toast.LENGTH_SHORT).show()
-            recreate()
         }
 
         val themeOptions = arrayOf("System Default", "Light Mode", "Dark Mode")
