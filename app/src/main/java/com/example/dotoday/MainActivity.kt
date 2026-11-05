@@ -40,7 +40,9 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -193,13 +195,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applySavedTheme()
-
-        val savedTasks = loadTasksFromPrefs()
-        if (savedTasks.isEmpty()) {
-            tasksByDay.putAll(defaultTasksByDay())
-        } else {
-            tasksByDay.putAll(savedTasks)
-        }
+        tasksByDay.putAll(defaultTasksByDay())
 
         // Initialize Firebase Cloud Messaging notifications and local task reminders
         FirebaseNotificationSetup.initialize(this)
@@ -211,6 +207,19 @@ class MainActivity : AppCompatActivity() {
         setupInbox()
         setupSettings()
         setupBottomNav()
+
+        lifecycleScope.launch {
+            val savedTasks = withContext(Dispatchers.IO) { loadTasksFromPrefs() }
+            if (savedTasks.isNotEmpty()) {
+                tasksByDay.clear()
+                tasksByDay.putAll(savedTasks)
+                runOnUiThread {
+                    setupCalendar()
+                    setupTimeline()
+                    selectCalendarDay(daysList.firstOrNull { it.number == selectedDayNumber } ?: daysList.first(), animate = false)
+                }
+            }
+        }
 
         findViewById<View>(R.id.btn_calendar_picker)?.setOnClickListener { showCalendarPickerDialog() }
         findViewById<FloatingActionButton>(R.id.fab_add_task).setOnClickListener { showAddTaskDialog() }
