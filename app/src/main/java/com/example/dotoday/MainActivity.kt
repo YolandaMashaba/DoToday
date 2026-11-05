@@ -586,7 +586,10 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_timeline -> timeline?.visibility = View.VISIBLE
             R.id.nav_notes -> notes?.visibility = View.VISIBLE
             R.id.nav_inbox -> { inbox?.visibility = View.VISIBLE; fetchTodoistTasks() }
-            R.id.nav_settings -> { settings?.visibility = View.VISIBLE; setupSettings() }
+            R.id.nav_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                return
+            }
         }
     }
 
@@ -605,6 +608,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupSettings() {
         val settingsView = findViewById<View>(R.id.layout_settings) ?: return
+        settingsView.visibility = View.VISIBLE
         val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
 
         val tvProfileName = settingsView.findViewById<TextView>(R.id.tv_profile_name)
