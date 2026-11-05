@@ -1,6 +1,7 @@
 package com.example.dotoday
 
 import android.accounts.AccountManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -31,7 +32,7 @@ class LoginActivity : AppCompatActivity() {
             if (accountName != null) {
                 Log.i(TAG, "Signed in with Google device account: $accountName")
                 Toast.makeText(this, "Signed in as $accountName", Toast.LENGTH_SHORT).show()
-                goToMain()
+                saveLoginStateAndGoToMain()
             } else {
                 Log.w(TAG, "Account picker returned no account name")
                 Toast.makeText(this, "Sign-in cancelled or failed", Toast.LENGTH_SHORT).show()
@@ -43,6 +44,15 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Check if user is already logged in (e.g. after language locale restart)
+        val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(SettingsActivity.KEY_IS_LOGGED_IN, false)) {
+            Log.i(TAG, "User session active - bypassing LoginActivity and jumping to MainActivity")
+            goToMain()
+            return
+        }
+
         Log.d(TAG, "Initializing LoginActivity")
         setContentView(R.layout.activity_login)
 
@@ -81,7 +91,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         Toast.makeText(this, getString(R.string.auth_login_success), Toast.LENGTH_SHORT).show()
-        goToMain()
+        saveLoginStateAndGoToMain()
     }
 
     @Suppress("DEPRECATION")
@@ -95,6 +105,12 @@ class LoginActivity : AppCompatActivity() {
             Log.e(TAG, "Failed to launch account picker", e)
             Toast.makeText(this, "Unable to open Google account picker", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun saveLoginStateAndGoToMain() {
+        val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(SettingsActivity.KEY_IS_LOGGED_IN, true).apply()
+        goToMain()
     }
 
     private fun goToMain() {
