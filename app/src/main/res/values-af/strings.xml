@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_inbox">Inkassie</string>
+    <string name="nav_timeline">Tydlyn</string>
+    <string name="nav_notes">Notas</string>
+    <string name="nav_settings">Instellings</string>
+
+    <string name="settings_language">Programtaal</string>
+    <string name="settings_select_language">Kies taal</string>
+    <string name="settings_follow_system">Gebruik toesteltaal</string>
+    <string name="settings_theme">Programtema</string>
+    <string name="settings_default_time">Verstektaaktyd</string>
+    <string name="settings_completed_action">Voltooide taakaksie</string>
+    <string name="settings_haptic_feedback">Haptiese terugvoer by voltooiing</string>
+
+
+    <!-- AANMELDING EN REGISTRASIE -->
+
+    <string name="auth_welcome_back">Welkom terug</string>
+    <string name="auth_login_button">Meld aan</string>
+    <string name="auth_go_register">Het jy nie ’n rekening nie? Registreer</string>
+    <string name="auth_create_account">Skep rekening</string>
+    <string name="auth_join_today">Sluit vandag by DoToday aan</string>
+    <string name="auth_email_hint">E-posadres</string>
+    <string name="auth_password_min_hint">Wagwoord (minstens 8 karakters)</string>
+    <string name="auth_password_hint">Wagwoord</string>
+    <string name="auth_confirm_password">Bevestig wagwoord</string>
+    <string name="auth_register_button">Registreer</string>
+    <string name="auth_go_login">Het jy reeds ’n rekening? Meld aan</string>
+
+    <!-- VALIDERING EN BOODSKAPPE -->
+
+    <string name="auth_email_required">E-posadres word vereis</string>
+    <string name="auth_invalid_email">Voer ’n geldige e-posadres in</string>
+    <string name="auth_password_required">Wagwoord word vereis</string>
+    <string name="auth_login_success">Jy is suksesvol aangemeld!</string>
+    <string name="auth_password_minimum">Wagwoord moet minstens 8 karakters hê</string>
+    <string name="auth_password_mismatch">Wagwoorde stem nie ooreen nie</string>
+    <string name="auth_register_success">Rekening suksesvol geskep!</string>
+
+
+    <!-- INKASSIE -->
+    <string name="inbox_title">Inkassie</string>
+    <string name="inbox_empty_title">My Ongeorganiseerde Gedagtes</string>
+    <string name="inbox_empty_description">Teken take en gedagtes aan soos hulle opkom. Skuif hulle na jou tydlyn wanneer jy gereed is om hulle te skeduleer.</string>
+    <string name="inbox_new_task">+ Nuwe Inkassietaak</string>
+    <string name="inbox_dialog_title">Nuwe Inkassietaak</string>
+    <string name="inbox_fetch_error">Kon nie take ophaal nie: %1$s</string>
+    <string name="inbox_add_error">Kon nie taak byvoeg nie: %1$s</string>
+    <string name="inbox_add_success">Taak by Todoist gevoeg</string>
+
+    <!-- NOTAS -->
+    <string name="notes_title">My Notas</string>
+    <string name="notes_hint">Skryf jou notas hier...</string>
+
+    <!-- TAKE -->
+    <string name="task_new_schedule">Nuwe Geskeduleerde Taak</string>
+    <string name="task_title_hint">Taaktitel</string>
+    <string name="task_description_hint">Beskrywing (Opsioneel)</string>
+    <string name="task_start_time">Begintyd</string>
+    <string name="task_end_time">Eindtyd</string>
+    <string name="task_minutes">Min.</string>
+    <string name="task_repeat">Herhaal Taak</string>
+    <string name="task_frequency">Frekwensie</string>
+    <string name="task_repeat_count">Aantal Herhalings</string>
+    <string name="task_daily">Daagliks</string>
+    <string name="task_weekly">Weekliks</string>
+    <string name="task_monthly">Maandeliks</string>
+    <string name="task_add">Voeg by</string>
+    <string name="task_cancel">Kanselleer</string>
+    <string name="task_icon_description">Taakikoon</string>
+    <string name="task_repeat_description">Herhaalikoon</string>
+    <string name="task_complete_description">Voltooi taak</string>
+    <string name="task_checkbox_description">Merkblokkie</string>
+    <string name="task_timer_description">Tydhouerikoon</string>
+    <string name="task_add_inline">+ Voeg Taak By</string>
+    <string name="task_added_day">Taak \'%1$s\' by dag %2$s gevoeg</string>
+    <string name="task_repeated">Taak \'%1$s\' geskeduleer en %2$d keer herhaal (%3$s)!</string>
+    <string name="task_days">dae</string>
+    <string name="task_weeks">weke</string>
+    <string name="task_required">Voer asseblief \'n taaktitel in</string>
+
+    <!-- KALENDER -->
+    <string name="calendar_overview">Kalender en Taakoorsig</string>
+    <string name="calendar_no_tasks">Geen take vir hierdie dag geskeduleer nie.</string>
+    <string name="calendar_tasks_for">Take vir %1$s:</string>
+    <string name="calendar_view_timeline">Bekyk Tydlyn</string>
+    <string name="calendar_close">Sluit</string>
+    <string name="calendar_switched">Oorgeskakel na %1$s</string>
+    <string name="calendar_empty_day">Geen take vir %1$s nie. Tik + om by te voeg!</string>
+
+    <!-- ALGEMEEN -->
+    <string name="general_logout">Meld af</string>
+    <string name="general_logout_success">Suksesvol afgemeld!</string>
+    <string name="general_section_soon">%1$s-afdeling kom binnekort!</string>
+    <string name="general_profile_picture">Profielfoto</string>
+</resources>

@@ -4,12 +4,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
-import android.view.View
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -33,86 +29,88 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d(TAG, "onCreate() - Initializing LoginActivity UI and Edge-to-Edge window insets")
 
-        // Do not force edge-to-edge rendering here; the app theme already handles bars
-        // and the previous insets callback caused layout loops that triggered ANR state.
         setContentView(R.layout.activity_login)
 
-        // Bind layout view components
         tilEmail = findViewById(R.id.til_email)
         tilPassword = findViewById(R.id.til_password)
+
         etEmail = findViewById(R.id.et_email)
         etPassword = findViewById(R.id.et_password)
+
         btnLogin = findViewById(R.id.btn_login)
         btnGoToRegister = findViewById(R.id.btn_go_to_register)
 
-        // Set up action click listeners
         btnLogin.setOnClickListener {
-            Log.d(TAG, "Login button clicked - executing attemptLogin()")
             attemptLogin()
         }
 
         btnGoToRegister.setOnClickListener {
-            Log.i(TAG, "Navigating from LoginActivity to RegisterActivity")
-            startActivity(Intent(this, RegisterActivity::class.java))
+            startActivity(
+                Intent(this, RegisterActivity::class.java)
+            )
         }
     }
 
-    /**
-     * Validates email address format and password inputs.
-     * Displays error messages directly on [TextInputLayout] components if validation fails.
-     */
     private fun attemptLogin() {
-        val email = etEmail.text?.toString()?.trim() ?: ""
-        val password = etPassword.text?.toString() ?: ""
 
-        // Clear any previous error indicators on text input fields
+        val email = etEmail.text
+            ?.toString()
+            ?.trim() ?: ""
+
+        val password = etPassword.text
+            ?.toString() ?: ""
+
         tilEmail.error = null
         tilPassword.error = null
 
-        // Validate email presence
+        // Email must not be empty
         if (email.isEmpty()) {
-            tilEmail.error = "Email is required"
-            Log.w(TAG, "Login validation failed: email field is empty")
+            tilEmail.error = getString(
+                R.string.auth_email_required
+            )
             return
         }
 
-        // Validate email syntax structure
+        // Check email format
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            tilEmail.error = "Enter a valid email address"
-            Log.w(TAG, "Login validation failed: invalid email format '$email'")
+            tilEmail.error = getString(
+                R.string.auth_invalid_email
+            )
             return
         }
 
-        // Validate password presence
+        // Password must not be empty
         if (password.isEmpty()) {
-            tilPassword.error = "Password is required"
-            Log.w(TAG, "Login validation failed: password field is empty")
+            tilPassword.error = getString(
+                R.string.auth_password_required
+            )
             return
         }
 
-        Log.i(TAG, "Login inputs validated successfully for user: '$email'")
+        Log.i("LoginActivity", "Login input validated")
 
-        // Simulation placeholder for backend / Firebase authentication
-        Toast.makeText(this, "Logged in successfully!", Toast.LENGTH_SHORT).show()
+        // Existing simulated authentication
+        Toast.makeText(
+            this,
+            getString(R.string.auth_login_success),
+            Toast.LENGTH_SHORT
+        ).show()
+
         goToMain()
     }
 
-    /**
-     * Navigates to [MainActivity] and purges the activity task back stack
-     * so pressing the system back button cannot return to the login screen.
-     */
     private fun goToMain() {
-        Log.i(TAG, "Transitioning to MainActivity - clearing task back stack")
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+        val intent = Intent(
+            this,
+            MainActivity::class.java
+        ).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
+
         startActivity(intent)
         finish()
-    }
-
-    companion object {
-        private const val TAG = "LoginActivity"
     }
 }

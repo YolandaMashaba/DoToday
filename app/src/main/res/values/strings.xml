@@ -19,4 +19,97 @@
     <string name="desc_first_task">Start structuring your day</string>
     <string name="desc_inbox">Don\'t forget anything</string>
     <string name="desc_own_it">Adjust colors and more</string>
+
+
+    <!-- Language Settings -->
+    <string name="nav_notes">Notes</string>
+    <string name="settings_language">App Language</string>
+    <string name="settings_select_language">Select Language</string>
+    <string name="settings_follow_system">Use Device Language</string>
+    <string name="settings_theme">App Theme</string>
+    <string name="settings_default_time">Default Task Time</string>
+    <string name="settings_completed_action">Completed Task Action</string>
+    <string name="settings_haptic_feedback">Haptic Feedback on Completion</string>
+
+
+    <!-- LOGIN AND REGISTRATION -->
+
+    <string name="auth_welcome_back">Welcome Back</string>
+    <string name="auth_login_button">Login</string>
+    <string name="auth_go_register">Don\'t have an account? Register</string>
+    <string name="auth_create_account">Create Account</string>
+    <string name="auth_join_today">Join DoToday today</string>
+    <string name="auth_email_hint">Email</string>
+    <string name="auth_password_min_hint">Password (min 8 characters)</string>
+    <string name="auth_password_hint">Password</string>
+    <string name="auth_confirm_password">Confirm Password</string>
+    <string name="auth_register_button">Register</string>
+    <string name="auth_go_login">Already have an account? Login</string>
+
+    <!-- VALIDATION AND MESSAGES -->
+
+    <string name="auth_email_required">Email is required</string>
+    <string name="auth_invalid_email">Enter a valid email address</string>
+    <string name="auth_password_required">Password is required</string>
+    <string name="auth_login_success">Logged in successfully!</string>
+    <string name="auth_password_minimum">Password must be at least 8 characters</string>
+    <string name="auth_password_mismatch">Passwords do not match</string>
+    <string name="auth_register_success">Account created successfully!</string>
+
+
+    <!-- INBOX -->
+    <string name="inbox_title">Inbox</string>
+    <string name="inbox_empty_title">My Disorganised Thoughts</string>
+    <string name="inbox_empty_description">Capture tasks and thoughts as they come. Move them to your timeline when you\'re ready to schedule.</string>
+    <string name="inbox_new_task">+ New Inbox Task</string>
+    <string name="inbox_dialog_title">New Inbox Task</string>
+    <string name="inbox_fetch_error">Failed to fetch tasks: %1$s</string>
+    <string name="inbox_add_error">Failed to add task: %1$s</string>
+    <string name="inbox_add_success">Task added to Todoist</string>
+
+    <!-- NOTES -->
+    <string name="notes_title">My Notes</string>
+    <string name="notes_hint">Write your notes here...</string>
+
+    <!-- TIMELINE AND TASKS -->
+    <string name="task_new_schedule">New Schedule Task</string>
+    <string name="task_title_hint">Task Title</string>
+    <string name="task_description_hint">Description (Optional)</string>
+    <string name="task_start_time">Start Time</string>
+    <string name="task_end_time">End Time</string>
+    <string name="task_minutes">Min</string>
+    <string name="task_repeat">Repeat Task</string>
+    <string name="task_frequency">Frequency</string>
+    <string name="task_repeat_count">For (Count)</string>
+    <string name="task_daily">Daily</string>
+    <string name="task_weekly">Weekly</string>
+    <string name="task_monthly">Monthly</string>
+    <string name="task_add">Add</string>
+    <string name="task_cancel">Cancel</string>
+    <string name="task_icon_description">Task Icon</string>
+    <string name="task_repeat_description">Repeat Icon</string>
+    <string name="task_complete_description">Complete Task</string>
+    <string name="task_checkbox_description">Checkbox</string>
+    <string name="task_timer_description">Timer Icon</string>
+    <string name="task_add_inline">+ Add Task</string>
+    <string name="task_added_day">Task \'%1$s\' added to day %2$s</string>
+    <string name="task_repeated">Task \'%1$s\' scheduled and repeated for %2$d %3$s!</string>
+    <string name="task_days">days</string>
+    <string name="task_weeks">weeks</string>
+    <string name="task_required">Please enter a task title</string>
+
+    <!-- CALENDAR -->
+    <string name="calendar_overview">Calendar &amp; Tasks Overview</string>
+    <string name="calendar_no_tasks">No tasks scheduled for this day.</string>
+    <string name="calendar_tasks_for">Tasks for %1$s:</string>
+    <string name="calendar_view_timeline">View Timeline</string>
+    <string name="calendar_close">Close</string>
+    <string name="calendar_switched">Switched to %1$s</string>
+    <string name="calendar_empty_day">No tasks for %1$s. Tap + to add!</string>
+
+    <!-- GENERAL -->
+    <string name="general_logout">Logout</string>
+    <string name="general_logout_success">Logged out successfully!</string>
+    <string name="general_section_soon">%1$s section coming soon!</string>
+    <string name="general_profile_picture">Profile Picture</string>
 </resources>

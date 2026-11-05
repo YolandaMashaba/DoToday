@@ -17,7 +17,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Create Account"
+            android:text="@string/auth_create_account"
             android:textColor="@color/app_secondary"
             android:textSize="32sp"
             android:textStyle="bold"
@@ -26,7 +26,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Join DoToday today"
+            android:text="@string/auth_join_today"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="16sp"
             android:layout_marginTop="8dp"
@@ -37,7 +37,7 @@
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Email"
+            android:hint="@string/auth_email_hint"
             app:boxBackgroundColor="?attr/colorSurfaceContainer"
             app:boxStrokeColor="@color/app_secondary"
             app:hintTextColor="@color/app_secondary">
@@ -57,7 +57,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="Password (min 8 characters)"
+            android:hint="@string/auth_password_min_hint"
             app:boxBackgroundColor="?attr/colorSurfaceContainer"
             app:boxStrokeColor="@color/app_secondary"
             app:hintTextColor="@color/app_secondary"
@@ -79,7 +79,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="Confirm Password"
+            android:hint="@string/auth_confirm_password"
             app:boxBackgroundColor="?attr/colorSurfaceContainer"
             app:boxStrokeColor="@color/app_secondary"
             app:hintTextColor="@color/app_secondary"
@@ -102,7 +102,7 @@
             android:layout_marginTop="32dp"
             android:paddingTop="14dp"
             android:paddingBottom="14dp"
-            android:text="Register"
+            android:text="@string/auth_register_button"
             android:textAllCaps="false"
             android:textSize="16sp"
             android:backgroundTint="@color/app_secondary"
@@ -114,7 +114,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Already have an account? Login"
+            android:text="@string/auth_go_login"
             android:textAllCaps="false"
             android:textColor="@color/app_secondary" />
 

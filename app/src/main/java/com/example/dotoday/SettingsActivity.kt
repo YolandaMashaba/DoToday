@@ -18,6 +18,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
+import androidx.core.os.LocaleListCompat
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
@@ -42,32 +44,48 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs = getSharedPreferences(
+            PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
 
-        // Root vertical layout
+        // ROOT LAYOUT
         val rootLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT
             )
-            setBackgroundColor(Color.parseColor("#121212")) // Dark background to match app
+
+            setBackgroundColor(
+                Color.parseColor("#121212")
+            )
         }
 
-        // 1. Top Toolbar with Navigation Back Arrow
+        // TOP TOOLBAR
         val toolbar = MaterialToolbar(this).apply {
-            title = "Settings"
+            title = getString(R.string.nav_settings)
+
             setTitleTextColor(Color.WHITE)
-            setBackgroundColor(Color.parseColor("#1F1F1F"))
-            navigationIcon = androidx.core.content.ContextCompat.getDrawable(
+
+            setBackgroundColor(
+                Color.parseColor("#1F1F1F")
+            )
+
+            navigationIcon = ContextCompat.getDrawable(
                 this@SettingsActivity,
                 android.R.drawable.ic_menu_revert
             )
-            setNavigationOnClickListener { finish() }
+
+            setNavigationOnClickListener {
+                finish()
+            }
         }
+
         rootLayout.addView(toolbar)
 
-        // Scrollable content view for settings items
+        // SCROLLABLE SETTINGS CONTENT
         val scrollView = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -77,35 +95,71 @@ class SettingsActivity : AppCompatActivity() {
 
         val contentLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+
             setPadding(48, 32, 48, 48)
         }
 
-       // FEATURE 1: App Theme Selection
+        // ==========================================
+        // FEATURE 1: APP THEME SELECTION
+        // ==========================================
 
-        val themeLabel = createSectionLabel("App Theme")
-        val themeInputLayout = createDropdownContainer("Select Theme")
+        val themeLabel = createSectionLabel(
+            getString(R.string.settings_theme)
+        )
 
-        val themeOptions = arrayOf("System Default", "Light Mode", "Dark Mode")
-        val themeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, themeOptions)
+        val themeInputLayout = createDropdownContainer(
+            "Select Theme"
+        )
 
-        val themeDropdown = AutoCompleteTextView(themeInputLayout.context).apply {
+        val themeOptions = arrayOf(
+            "System Default",
+            "Light Mode",
+            "Dark Mode"
+        )
+
+        val themeAdapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_dropdown_item_1line,
+            themeOptions
+        )
+
+        val themeDropdown = AutoCompleteTextView(
+            themeInputLayout.context
+        ).apply {
+
             inputType = android.text.InputType.TYPE_NULL
             setTextColor(Color.WHITE)
             setAdapter(themeAdapter)
 
-            val currentTheme = prefs.getString(KEY_THEME, "System Default")
+            val currentTheme = prefs.getString(
+                KEY_THEME,
+                "System Default"
+            )
+
             setText(currentTheme, false)
 
-            // Triggers the dropdown list on click and touch
-            setOnClickListener { showDropDown() }
-            setOnFocusChangeListener { _, hasFocus -> if (hasFocus) showDropDown() }
+            setOnClickListener {
+                showDropDown()
+            }
+
+            setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) {
+                    showDropDown()
+                }
+            }
 
             setOnItemClickListener { _, _, position, _ ->
+
                 val selected = themeOptions[position]
-                prefs.edit().putString(KEY_THEME, selected).apply()
+
+                prefs.edit()
+                    .putString(KEY_THEME, selected)
+                    .apply()
+
                 applyAppTheme(selected)
             }
         }
+
         themeInputLayout.addView(themeDropdown)
 
         contentLayout.addView(themeLabel)
@@ -113,20 +167,145 @@ class SettingsActivity : AppCompatActivity() {
 
         addSpacer(contentLayout)
 
+        // ==========================================
+        // FEATURE 2: MULTI-LANGUAGE SUPPORT
+        // ==========================================
 
-// FEATURE 2: Default Due Time
+        val languageLabel = createSectionLabel(
+            getString(R.string.settings_language)
+        )
 
-        val timeLabel = createSectionLabel("Default Task Time")
-        val savedTime = prefs.getString(KEY_DEFAULT_DUE_TIME, "09:00") ?: "09:00"
+        val languageInputLayout = createDropdownContainer(
+            getString(R.string.settings_select_language)
+        )
+
+        // Languages available in DoToday
+        val languageNames = arrayOf(
+            getString(R.string.settings_follow_system),
+            "English",
+            "isiZulu",
+            "Afrikaans"
+        )
+
+        // Language codes recognized by Android
+        val languageCodes = arrayOf(
+            "",
+            "en",
+            "zu",
+            "af"
+        )
+
+        // Read the currently selected application language
+        val currentLanguage =
+            AppCompatDelegate
+                .getApplicationLocales()[0]
+                ?.language ?: ""
+
+        // Determine the selected language
+        val selectedLanguageIndex =
+            languageCodes.indexOf(currentLanguage)
+                .let { index ->
+                    if (index >= 0) index else 0
+                }
+
+        val languageAdapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_dropdown_item_1line,
+            languageNames
+        )
+
+        val languageDropdown = AutoCompleteTextView(
+            languageInputLayout.context
+        ).apply {
+
+            inputType = android.text.InputType.TYPE_NULL
+
+            setTextColor(Color.WHITE)
+
+            setAdapter(languageAdapter)
+
+            // Display currently selected language
+            setText(
+                languageNames[selectedLanguageIndex],
+                false
+            )
+
+            setOnClickListener {
+                showDropDown()
+            }
+
+            setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) {
+                    showDropDown()
+                }
+            }
+
+            setOnItemClickListener { _, _, position, _ ->
+
+                val selectedCode = languageCodes[position]
+
+                // Do not recreate unnecessarily
+                if (selectedCode != currentLanguage) {
+
+                    val localeList =
+                        LocaleListCompat.forLanguageTags(
+                            selectedCode
+                        )
+
+                    // Apply selected language to the app
+                    AppCompatDelegate.setApplicationLocales(
+                        localeList
+                    )
+                }
+            }
+        }
+
+        languageInputLayout.addView(languageDropdown)
+
+        contentLayout.addView(languageLabel)
+        contentLayout.addView(languageInputLayout)
+
+        addSpacer(contentLayout)
+
+        // ==========================================
+        // FEATURE 3: DEFAULT TASK TIME
+        // ==========================================
+
+        val timeLabel = createSectionLabel(
+            getString(R.string.settings_default_time)
+        )
+
+        val savedTime = prefs.getString(
+            KEY_DEFAULT_DUE_TIME,
+            "09:00"
+        ) ?: "09:00"
 
         val timePickerButton = MaterialButton(this).apply {
+
             text = "Default Time: $savedTime"
-            setBackgroundColor(Color.parseColor("#2C2C2E"))
+
+            setBackgroundColor(
+                Color.parseColor("#2C2C2E")
+            )
+
             setTextColor(Color.WHITE)
+
             setOnClickListener {
-                val timeParts = savedTime.split(":")
-                val hour = timeParts.getOrNull(0)?.toIntOrNull() ?: 9
-                val minute = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
+
+                val currentSavedTime = prefs.getString(
+                    KEY_DEFAULT_DUE_TIME,
+                    "09:00"
+                ) ?: "09:00"
+
+                val timeParts = currentSavedTime.split(":")
+
+                val hour = timeParts
+                    .getOrNull(0)
+                    ?.toIntOrNull() ?: 9
+
+                val minute = timeParts
+                    .getOrNull(1)
+                    ?.toIntOrNull() ?: 0
 
                 val picker = MaterialTimePicker.Builder()
                     .setTimeFormat(TimeFormat.CLOCK_24H)
@@ -136,12 +315,31 @@ class SettingsActivity : AppCompatActivity() {
                     .build()
 
                 picker.addOnPositiveButtonClickListener {
-                    val newTime = String.format(Locale.getDefault(), "%02d:%02d", picker.hour, picker.minute)
-                    prefs.edit().putString(KEY_DEFAULT_DUE_TIME, newTime).apply()
+
+                    val newTime = String.format(
+                        Locale.ROOT,
+                        "%02d:%02d",
+                        picker.hour,
+                        picker.minute
+                    )
+
+                    prefs.edit()
+                        .putString(KEY_DEFAULT_DUE_TIME, newTime)
+                        .apply()
+
                     text = "Default Time: $newTime"
-                    Toast.makeText(context, "Default time saved", Toast.LENGTH_SHORT).show()
+
+                    Toast.makeText(
+                        context,
+                        "Default time saved",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-                picker.show(supportFragmentManager, "DEFAULT_TIME_PICKER")
+
+                picker.show(
+                    supportFragmentManager,
+                    "DEFAULT_TIME_PICKER"
+                )
             }
         }
 
@@ -150,96 +348,218 @@ class SettingsActivity : AppCompatActivity() {
 
         addSpacer(contentLayout)
 
+        // ==========================================
+        // FEATURE 4: COMPLETED TASK ACTION
+        // ==========================================
 
-// FEATURE 3: Completed Task Action
+        val behaviorLabel = createSectionLabel(
+            getString(R.string.settings_completed_action)
+        )
 
-        val behaviorLabel = createSectionLabel("Completed Task Action")
-        val behaviorInputLayout = createDropdownContainer("Select Action")
+        val behaviorInputLayout = createDropdownContainer(
+            "Select Action"
+        )
 
-        val behaviorOptions = arrayOf("Keep in Place", "Move to Bottom", "Hide Immediately")
-        val behaviorAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, behaviorOptions)
+        val behaviorOptions = arrayOf(
+            "Keep in Place",
+            "Move to Bottom",
+            "Hide Immediately"
+        )
 
-        val behaviorDropdown = AutoCompleteTextView(behaviorInputLayout.context).apply {
+        val behaviorAdapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_dropdown_item_1line,
+            behaviorOptions
+        )
+
+        val behaviorDropdown = AutoCompleteTextView(
+            behaviorInputLayout.context
+        ).apply {
+
             inputType = android.text.InputType.TYPE_NULL
+
             setTextColor(Color.WHITE)
+
             setAdapter(behaviorAdapter)
 
-            val currentBehavior = prefs.getString(KEY_COMPLETED_BEHAVIOR, "Move to Bottom")
+            val currentBehavior = prefs.getString(
+                KEY_COMPLETED_BEHAVIOR,
+                "Move to Bottom"
+            )
+
             setText(currentBehavior, false)
 
-            // Triggers the dropdown list on click and touch
-            setOnClickListener { showDropDown() }
-            setOnFocusChangeListener { _, hasFocus -> if (hasFocus) showDropDown() }
+            setOnClickListener {
+                showDropDown()
+            }
+
+            setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) {
+                    showDropDown()
+                }
+            }
 
             setOnItemClickListener { _, _, position, _ ->
+
                 val selected = behaviorOptions[position]
-                prefs.edit().putString(KEY_COMPLETED_BEHAVIOR, selected).apply()
-                Toast.makeText(context, "Preference saved", Toast.LENGTH_SHORT).show()
+
+                prefs.edit()
+                    .putString(
+                        KEY_COMPLETED_BEHAVIOR,
+                        selected
+                    )
+                    .apply()
+
+                Toast.makeText(
+                    context,
+                    "Preference saved",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
+
         behaviorInputLayout.addView(behaviorDropdown)
 
         contentLayout.addView(behaviorLabel)
         contentLayout.addView(behaviorInputLayout)
 
+        addSpacer(contentLayout)
 
-        // FEATURE 4: Haptic Feedback Toggle
+        // ==========================================
+        // FEATURE 5: HAPTIC FEEDBACK
+        // ==========================================
 
         val hapticCard = MaterialCardView(this).apply {
-            setCardBackgroundColor(Color.parseColor("#1F1F1F"))
+
+            setCardBackgroundColor(
+                Color.parseColor("#1F1F1F")
+            )
+
             radius = 16f
             strokeWidth = 0
+
             val cardPadding = 32
-            setPadding(cardPadding, cardPadding, cardPadding, cardPadding)
+
+            setPadding(
+                cardPadding,
+                cardPadding,
+                cardPadding,
+                cardPadding
+            )
         }
 
         val hapticSwitch = SwitchMaterial(this).apply {
-            text = "Haptic Feedback on Completion"
+
+            text = getString(
+                R.string.settings_haptic_feedback
+            )
+
             setTextColor(Color.WHITE)
-            isChecked = prefs.getBoolean(KEY_HAPTIC_FEEDBACK, true)
+
+            isChecked = prefs.getBoolean(
+                KEY_HAPTIC_FEEDBACK,
+                true
+            )
 
             setOnCheckedChangeListener { _, isChecked ->
-                prefs.edit().putBoolean(KEY_HAPTIC_FEEDBACK, isChecked).apply()
+
+                prefs.edit()
+                    .putBoolean(
+                        KEY_HAPTIC_FEEDBACK,
+                        isChecked
+                    )
+                    .apply()
+
                 if (isChecked) {
                     triggerHapticFeedback(context)
                 }
             }
         }
+
         hapticCard.addView(hapticSwitch)
+
         contentLayout.addView(hapticCard)
 
+        // ==========================================
+        // FINALIZE SETTINGS SCREEN
+        // ==========================================
+
         scrollView.addView(contentLayout)
+
         rootLayout.addView(scrollView)
+
         setContentView(rootLayout)
     }
 
+    // ==========================================
+    // APPLY APP THEME
+    // ==========================================
+
     private fun applyAppTheme(themeChoice: String) {
+
         val mode = when (themeChoice) {
-            "Light Mode" -> AppCompatDelegate.MODE_NIGHT_NO
-            "Dark Mode" -> AppCompatDelegate.MODE_NIGHT_YES
-            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+
+            "Light Mode" ->
+                AppCompatDelegate.MODE_NIGHT_NO
+
+            "Dark Mode" ->
+                AppCompatDelegate.MODE_NIGHT_YES
+
+            else ->
+                AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
         }
+
         AppCompatDelegate.setDefaultNightMode(mode)
     }
 
-    private fun createSectionLabel(title: String): TextView {
+    // ==========================================
+    // CREATE SECTION LABEL
+    // ==========================================
+
+    private fun createSectionLabel(
+        title: String
+    ): TextView {
+
         return TextView(this).apply {
+
             text = title
             textSize = 14f
-            setTextColor(Color.parseColor("#A0A0A0"))
+
+            setTextColor(
+                Color.parseColor("#A0A0A0")
+            )
+
             setPadding(0, 0, 0, 12)
         }
     }
 
-    private fun createDropdownContainer(hintText: String): TextInputLayout {
+    // ==========================================
+    // CREATE DROPDOWN CONTAINER
+    // ==========================================
+
+    private fun createDropdownContainer(
+        hintText: String
+    ): TextInputLayout {
+
         return TextInputLayout(
             this,
             null,
-            com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox_ExposedDropdownMenu
+            com.google.android.material.R.style
+                .Widget_MaterialComponents_TextInputLayout_OutlinedBox_ExposedDropdownMenu
         ).apply {
+
             hint = hintText
-            setHintTextColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#A0A0A0")))
-            boxStrokeColor = Color.parseColor("#2F80ED")
+
+            setHintTextColor(
+                android.content.res.ColorStateList.valueOf(
+                    Color.parseColor("#A0A0A0")
+                )
+            )
+
+            boxStrokeColor = Color.parseColor(
+                "#2F80ED"
+            )
+
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -247,25 +567,55 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun addSpacer(container: LinearLayout) {
+    // ==========================================
+    // ADD SPACING BETWEEN SETTINGS
+    // ==========================================
+
+    private fun addSpacer(
+        container: LinearLayout
+    ) {
+
         val spacer = View(this).apply {
+
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 32
             )
         }
+
         container.addView(spacer)
     }
 
-    private fun triggerHapticFeedback(context: Context) {
+    // ==========================================
+    // HAPTIC FEEDBACK
+    // ==========================================
+
+    private fun triggerHapticFeedback(
+        context: Context
+    ) {
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+
+            val vibratorManager =
+                context.getSystemService(
+                    Context.VIBRATOR_MANAGER_SERVICE
+                ) as VibratorManager
+
             vibratorManager.defaultVibrator.vibrate(
-                VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)
+                VibrationEffect.createOneShot(
+                    50,
+                    VibrationEffect.DEFAULT_AMPLITUDE
+                )
             )
+
         } else {
+
             @Suppress("DEPRECATION")
-            val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            val vibrator =
+                context.getSystemService(
+                    Context.VIBRATOR_SERVICE
+                ) as Vibrator
+
             @Suppress("DEPRECATION")
             vibrator.vibrate(50)
         }

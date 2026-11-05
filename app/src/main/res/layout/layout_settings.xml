@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,13 +11,14 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Settings"
+        android:text="@string/nav_settings"
         android:textSize="32sp"
         android:textStyle="bold"
         android:textColor="?attr/colorOnSurface"
         android:layout_marginTop="32dp"
-        android:layout_marginBottom="32dp"/>
+        android:layout_marginBottom="32dp" />
 
+    <!-- Profile Section -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -34,7 +36,7 @@
             android:padding="8dp"
             android:background="@color/app_secondary"
             app:tint="@color/white"
-            android:contentDescription="Profile Picture" />
+            android:contentDescription="@string/general_profile_picture" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -58,7 +60,9 @@
                 android:text="john.doe@example.com"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="14sp" />
+
         </LinearLayout>
+
     </LinearLayout>
 
     <View
@@ -68,12 +72,13 @@
         android:alpha="0.2"
         android:layout_marginBottom="24dp" />
 
+    <!-- Logout -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_logout"
         style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Logout"
+        android:text="@string/general_logout"
         android:textColor="#FF5252"
         android:gravity="start|center_vertical"
         android:paddingStart="0dp"
