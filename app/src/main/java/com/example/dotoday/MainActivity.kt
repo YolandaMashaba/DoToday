@@ -364,7 +364,11 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_timeline -> { timeline.visibility = View.VISIBLE; true }
                 R.id.nav_notes -> { notes.visibility = View.VISIBLE; true }
                 R.id.nav_inbox -> { inbox.visibility = View.VISIBLE; fetchTodoistTasks(); true }
-                R.id.nav_settings -> { settings.visibility = View.VISIBLE; true }
+                R.id.nav_settings -> {
+                    settings.visibility = View.VISIBLE
+                    setupSettings()
+                    true
+                }
                 else -> true
             }
         }
@@ -395,8 +399,8 @@ class MainActivity : AppCompatActivity() {
         val languageCodes = arrayOf("en", "af", "zu", "")
         val languageAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, languageLabels)
         dropdownLanguage?.setAdapter(languageAdapter)
-        dropdownLanguage?.setOnClickListener { dropdownLanguage.showDropDown() }
-        dropdownLanguage?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownLanguage.showDropDown() }
+        dropdownLanguage?.setOnClickListener { dropdownLanguage.post { dropdownLanguage.showDropDown() } }
+        dropdownLanguage?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownLanguage.post { dropdownLanguage.showDropDown() } }
 
         val currentLangCode = prefs.getString(SettingsActivity.KEY_LANGUAGE, "") ?: ""
         val currentLangLabel = when (currentLangCode) {
@@ -418,8 +422,8 @@ class MainActivity : AppCompatActivity() {
         val themeOptions = arrayOf("System Default", "Light Mode", "Dark Mode")
         val themeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, themeOptions)
         dropdownTheme?.setAdapter(themeAdapter)
-        dropdownTheme?.setOnClickListener { dropdownTheme.showDropDown() }
-        dropdownTheme?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownTheme.showDropDown() }
+        dropdownTheme?.setOnClickListener { dropdownTheme.post { dropdownTheme.showDropDown() } }
+        dropdownTheme?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownTheme.post { dropdownTheme.showDropDown() } }
         val currentTheme = prefs.getString(SettingsActivity.KEY_THEME, "System Default")
         dropdownTheme?.setText(currentTheme, false)
         dropdownTheme?.setOnItemClickListener { _, _, position, _ ->
