@@ -230,6 +230,34 @@ class MainActivity : AppCompatActivity() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_add_task, null)
         val etTitle = view.findViewById<TextInputEditText>(R.id.et_task_title)
         val etDescription = view.findViewById<TextInputEditText>(R.id.et_task_description)
+        val btnPickTime = view.findViewById<MaterialButton>(R.id.btn_pick_time)
+        val btnPickEndTime = view.findViewById<MaterialButton>(R.id.btn_pick_end_time)
+
+        var selectedStartTime = task.time.ifEmpty { "08:00" }
+        var selectedEndTime = task.endTime.ifEmpty { "09:00" }
+
+        btnPickTime?.text = selectedStartTime
+        btnPickEndTime?.text = selectedEndTime
+
+        btnPickTime?.setOnClickListener {
+            val parts = selectedStartTime.split(":")
+            val hour = parts.getOrNull(0)?.toIntOrNull() ?: 8
+            val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+            TimePickerDialog(this, { _, h, m ->
+                selectedStartTime = String.format(Locale.ROOT, "%02d:%02d", h, m)
+                btnPickTime?.text = selectedStartTime
+            }, hour, minute, true).show()
+        }
+
+        btnPickEndTime?.setOnClickListener {
+            val parts = selectedEndTime.split(":")
+            val hour = parts.getOrNull(0)?.toIntOrNull() ?: 9
+            val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+            TimePickerDialog(this, { _, h, m ->
+                selectedEndTime = String.format(Locale.ROOT, "%02d:%02d", h, m)
+                btnPickEndTime?.text = selectedEndTime
+            }, hour, minute, true).show()
+        }
 
         etTitle?.setText(task.title)
         etDescription?.setText(task.subtitle)
@@ -242,7 +270,12 @@ class MainActivity : AppCompatActivity() {
                 val newTitle = etTitle?.text?.toString()?.trim().orEmpty()
                 val newDesc = etDescription?.text?.toString()?.trim()
                 if (newTitle.isNotEmpty()) {
-                    task.copy(title = newTitle, subtitle = newDesc ?: "").let { updated ->
+                    task.copy(
+                        title = newTitle,
+                        subtitle = newDesc ?: "",
+                        time = selectedStartTime,
+                        endTime = selectedEndTime
+                    ).let { updated ->
                         val entries = tasksByDay[selectedDayNumber] ?: mutableListOf()
                         if (position in entries.indices) {
                             entries[position] = updated
@@ -488,8 +521,16 @@ class MainActivity : AppCompatActivity() {
         val languageAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, languageLabels)
         dropdownLanguage?.setAdapter(languageAdapter)
         dropdownLanguage?.threshold = 0
-        dropdownLanguage?.setOnClickListener { dropdownLanguage.post { dropdownLanguage.showDropDown() } }
-        dropdownLanguage?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownLanguage.post { dropdownLanguage.showDropDown() } }
+        dropdownLanguage?.setOnClickListener {
+            languageAdapter.filter.filter(null)
+            dropdownLanguage.post { dropdownLanguage.showDropDown() }
+        }
+        dropdownLanguage?.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                languageAdapter.filter.filter(null)
+                dropdownLanguage.post { dropdownLanguage.showDropDown() }
+            }
+        }
 
         val currentLangCode = prefs.getString(SettingsActivity.KEY_LANGUAGE, "") ?: ""
         val currentLangLabel = when (currentLangCode) {
