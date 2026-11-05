@@ -42,6 +42,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var dropdownBehavior: AutoCompleteTextView
     private lateinit var switchHaptic: SwitchMaterial
     private lateinit var btnLogout: MaterialButton
+    private lateinit var btnBack: MaterialButton
 
     companion object {
         const val PREFS_NAME = "DoTodaySettings"
@@ -70,6 +71,11 @@ class SettingsActivity : AppCompatActivity() {
         dropdownBehavior = findViewById(R.id.dropdown_completed_behavior)
         switchHaptic = findViewById(R.id.switch_haptic)
         btnLogout = findViewById(R.id.btn_logout)
+        btnBack = findViewById(R.id.btn_back)
+
+        btnBack.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
 
         // 1. User Profile Setup
         val currentUsername = prefs.getString(KEY_USERNAME, "DoToday User") ?: "DoToday User"
