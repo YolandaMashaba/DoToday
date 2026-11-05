@@ -1,6 +1,7 @@
 package com.example.dotoday
 
 import android.app.TimePickerDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -15,7 +16,10 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.TimePicker
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -27,7 +31,11 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -126,6 +134,7 @@ class MainActivity : AppCompatActivity() {
         setupTimeline()
         setupCalendar()
         setupInbox()
+        setupSettings()
         setupBottomNav()
 
         findViewById<View>(R.id.btn_calendar_picker)?.setOnClickListener { showCalendarPickerDialog() }
@@ -341,10 +350,162 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_timeline -> { timeline.visibility = View.VISIBLE; true }
                 R.id.nav_notes -> { notes.visibility = View.VISIBLE; true }
                 R.id.nav_inbox -> { inbox.visibility = View.VISIBLE; fetchTodoistTasks(); true }
-                R.id.nav_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
+                R.id.nav_settings -> { settings.visibility = View.VISIBLE; true }
                 else -> true
             }
         }
+    }
+
+    private fun setupSettings() {
+        val settingsView = findViewById<View>(R.id.layout_settings) ?: return
+        val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+
+        val tvProfileName = settingsView.findViewById<TextView>(R.id.tv_profile_name)
+        val tvProfileEmail = settingsView.findViewById<TextView>(R.id.tv_profile_email)
+        val btnEditUsername = settingsView.findViewById<MaterialButton>(R.id.btn_edit_username)
+        val dropdownLanguage = settingsView.findViewById<AutoCompleteTextView>(R.id.dropdown_language)
+        val dropdownTheme = settingsView.findViewById<AutoCompleteTextView>(R.id.dropdown_theme)
+        val btnDefaultTime = settingsView.findViewById<MaterialButton>(R.id.btn_default_time)
+        val dropdownBehavior = settingsView.findViewById<AutoCompleteTextView>(R.id.dropdown_completed_behavior)
+        val switchHaptic = settingsView.findViewById<SwitchMaterial>(R.id.switch_haptic)
+        val btnLogout = settingsView.findViewById<MaterialButton>(R.id.btn_logout)
+
+        val currentUsername = prefs.getString(SettingsActivity.KEY_USERNAME, "DoToday User") ?: "DoToday User"
+        tvProfileName?.text = currentUsername
+        tvProfileEmail?.text = "Active Account"
+        btnEditUsername?.setOnClickListener {
+            showUpdateUsernameDialog(tvProfileName)
+        }
+
+        val languageLabels = arrayOf("English", "Afrikaans", "isiZulu", "System Default")
+        val languageCodes = arrayOf("en", "af", "zu", "")
+        val languageAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, languageLabels)
+        dropdownLanguage?.setAdapter(languageAdapter)
+        dropdownLanguage?.setOnClickListener { dropdownLanguage.showDropDown() }
+        dropdownLanguage?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownLanguage.showDropDown() }
+
+        val currentLangCode = prefs.getString(SettingsActivity.KEY_LANGUAGE, "") ?: ""
+        val currentLangLabel = when (currentLangCode) {
+            "af" -> "Afrikaans"
+            "zu" -> "isiZulu"
+            "en" -> "English"
+            else -> "System Default"
+        }
+        dropdownLanguage?.setText(currentLangLabel, false)
+        dropdownLanguage?.setOnItemClickListener { _, _, position, _ ->
+            val selectedCode = languageCodes[position]
+            prefs.edit().putString(SettingsActivity.KEY_LANGUAGE, selectedCode).apply()
+            val appLocale = if (selectedCode.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                            else LocaleListCompat.forLanguageTags(selectedCode)
+            AppCompatDelegate.setApplicationLocales(appLocale)
+            Toast.makeText(this, "Language updated", Toast.LENGTH_SHORT).show()
+            recreate()
+        }
+
+        val themeOptions = arrayOf("System Default", "Light Mode", "Dark Mode")
+        val themeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, themeOptions)
+        dropdownTheme?.setAdapter(themeAdapter)
+        dropdownTheme?.setOnClickListener { dropdownTheme.showDropDown() }
+        dropdownTheme?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownTheme.showDropDown() }
+        val currentTheme = prefs.getString(SettingsActivity.KEY_THEME, "System Default")
+        dropdownTheme?.setText(currentTheme, false)
+        dropdownTheme?.setOnItemClickListener { _, _, position, _ ->
+            val selected = themeOptions[position]
+            prefs.edit().putString(SettingsActivity.KEY_THEME, selected).apply()
+            val mode = when (selected) {
+                "Light Mode" -> AppCompatDelegate.MODE_NIGHT_NO
+                "Dark Mode" -> AppCompatDelegate.MODE_NIGHT_YES
+                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            }
+            AppCompatDelegate.setDefaultNightMode(mode)
+            Toast.makeText(this, "Theme updated", Toast.LENGTH_SHORT).show()
+        }
+
+        val savedTime = prefs.getString(SettingsActivity.KEY_DEFAULT_DUE_TIME, "09:00") ?: "09:00"
+        btnDefaultTime?.text = "Default Task Time: $savedTime"
+        btnDefaultTime?.setOnClickListener {
+            val timeParts = savedTime.split(":")
+            val hour = timeParts.getOrNull(0)?.toIntOrNull() ?: 9
+            val minute = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
+
+            val picker = MaterialTimePicker.Builder()
+                .setTimeFormat(TimeFormat.CLOCK_24H)
+                .setHour(hour)
+                .setMinute(minute)
+                .setTitleText("Select Default Task Time")
+                .build()
+
+            picker.addOnPositiveButtonClickListener {
+                val newTime = String.format(Locale.getDefault(), "%02d:%02d", picker.hour, picker.minute)
+                prefs.edit().putString(SettingsActivity.KEY_DEFAULT_DUE_TIME, newTime).apply()
+                btnDefaultTime.text = "Default Task Time: $newTime"
+                Toast.makeText(this, "Default time saved", Toast.LENGTH_SHORT).show()
+            }
+            picker.show(supportFragmentManager, "DEFAULT_TIME_PICKER")
+        }
+
+        val behaviorOptions = arrayOf("Keep in Place", "Move to Bottom", "Hide Immediately")
+        val behaviorAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, behaviorOptions)
+        dropdownBehavior?.setAdapter(behaviorAdapter)
+        dropdownBehavior?.setOnClickListener { dropdownBehavior.showDropDown() }
+        dropdownBehavior?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownBehavior.showDropDown() }
+        val currentBehavior = prefs.getString(SettingsActivity.KEY_COMPLETED_BEHAVIOR, "Move to Bottom")
+        dropdownBehavior?.setText(currentBehavior, false)
+        dropdownBehavior?.setOnItemClickListener { _, _, position, _ ->
+            val selected = behaviorOptions[position]
+            prefs.edit().putString(SettingsActivity.KEY_COMPLETED_BEHAVIOR, selected).apply()
+            Toast.makeText(this, "Preference saved", Toast.LENGTH_SHORT).show()
+        }
+
+        switchHaptic?.isChecked = prefs.getBoolean(SettingsActivity.KEY_HAPTIC_FEEDBACK, true)
+        switchHaptic?.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(SettingsActivity.KEY_HAPTIC_FEEDBACK, isChecked).apply()
+        }
+
+        btnLogout?.setOnClickListener {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Log Out")
+                .setMessage("Are you sure you want to log out of DoToday?")
+                .setPositiveButton("Log Out") { _, _ ->
+                    Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(this, LoginActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                    startActivity(intent)
+                    finish()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    private fun showUpdateUsernameDialog(tvProfileName: TextView) {
+        val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        val inputLayout = TextInputLayout(this).apply {
+            hint = "New Username"
+            setPadding(32, 16, 32, 16)
+        }
+        val editText = TextInputEditText(inputLayout.context).apply {
+            setText(prefs.getString(SettingsActivity.KEY_USERNAME, "DoToday User"))
+            maxLines = 1
+        }
+        inputLayout.addView(editText)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Update Username")
+            .setView(inputLayout)
+            .setPositiveButton("Save") { _, _ ->
+                val newName = editText.text?.toString()?.trim() ?: ""
+                if (newName.isNotEmpty()) {
+                    prefs.edit().putString(SettingsActivity.KEY_USERNAME, newName).apply()
+                    tvProfileName.text = newName
+                    Toast.makeText(this, "Username updated", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Username cannot be empty", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun setupInbox() {
