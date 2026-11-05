@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 /** Login screen with credential validation and Android's Google account picker. */
 class LoginActivity : AppCompatActivity() {
@@ -102,10 +104,40 @@ class LoginActivity : AppCompatActivity() {
             tilPassword.error = getString(R.string.auth_password_required)
             return
         }
+        if (password.length < 8) {
+            tilPassword.error = getString(R.string.auth_password_minimum)
+            return
+        }
+
+        val registeredUsers = getRegisteredUsers()
+        val match = registeredUsers.find { it.email.equals(email, ignoreCase = true) && it.password == password }
+        if (match == null) {
+            tilEmail.error = "No account found for this email"
+            tilPassword.error = "Check your email and password"
+            Toast.makeText(this, "Please register before logging in", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         Toast.makeText(this, getString(R.string.auth_login_success), Toast.LENGTH_SHORT).show()
         saveLoginStateAndGoToMain()
     }
+
+    private fun getRegisteredUsers(): List<RegisteredUser> {
+        val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        val json = prefs.getString(KEY_REGISTERED_USERS, null) ?: return emptyList()
+        return try {
+            val type = object : TypeToken<List<RegisteredUser>>() {}.type
+            Gson().fromJson(json, type) ?: emptyList()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read registered users", e)
+            emptyList()
+        }
+    }
+
+    data class RegisteredUser(
+        val email: String,
+        val password: String
+    )
 
     @Suppress("DEPRECATION")
     private fun attemptSsoLogin() {
@@ -136,5 +168,6 @@ class LoginActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "LoginActivity"
+        private const val KEY_REGISTERED_USERS = "key_registered_users"
     }
 }
