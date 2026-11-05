@@ -348,30 +348,35 @@ class MainActivity : AppCompatActivity() {
         dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(getColor(R.color.text_secondary_color))
     }
 
+    private fun selectTab(itemId: Int) {
+        val timeline = findViewById<RecyclerView>(R.id.rv_timeline)
+        val notes = findViewById<View>(R.id.layout_notes)
+        val inbox = findViewById<View>(R.id.layout_inbox)
+        val settings = findViewById<View>(R.id.layout_settings)
+        timeline?.visibility = View.GONE
+        notes?.visibility = View.GONE
+        inbox?.visibility = View.GONE
+        settings?.visibility = View.GONE
+
+        when (itemId) {
+            R.id.nav_timeline -> timeline?.visibility = View.VISIBLE
+            R.id.nav_notes -> notes?.visibility = View.VISIBLE
+            R.id.nav_inbox -> { inbox?.visibility = View.VISIBLE; fetchTodoistTasks() }
+            R.id.nav_settings -> { settings?.visibility = View.VISIBLE; setupSettings() }
+        }
+    }
+
     private fun setupBottomNav() {
         val nav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        nav.selectedItemId = R.id.nav_timeline
+        val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        val savedTabId = prefs.getInt("key_selected_tab", R.id.nav_timeline)
+
         nav.setOnItemSelectedListener { item ->
-            val timeline = findViewById<RecyclerView>(R.id.rv_timeline)
-            val notes = findViewById<View>(R.id.layout_notes)
-            val inbox = findViewById<View>(R.id.layout_inbox)
-            val settings = findViewById<View>(R.id.layout_settings)
-            timeline.visibility = View.GONE
-            notes.visibility = View.GONE
-            inbox.visibility = View.GONE
-            settings.visibility = View.GONE
-            when (item.itemId) {
-                R.id.nav_timeline -> { timeline.visibility = View.VISIBLE; true }
-                R.id.nav_notes -> { notes.visibility = View.VISIBLE; true }
-                R.id.nav_inbox -> { inbox.visibility = View.VISIBLE; fetchTodoistTasks(); true }
-                R.id.nav_settings -> {
-                    settings.visibility = View.VISIBLE
-                    setupSettings()
-                    true
-                }
-                else -> true
-            }
+            prefs.edit().putInt("key_selected_tab", item.itemId).apply()
+            selectTab(item.itemId)
+            true
         }
+        nav.selectedItemId = savedTabId
     }
 
     private fun setupSettings() {
@@ -399,6 +404,7 @@ class MainActivity : AppCompatActivity() {
         val languageCodes = arrayOf("en", "af", "zu", "")
         val languageAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, languageLabels)
         dropdownLanguage?.setAdapter(languageAdapter)
+        dropdownLanguage?.threshold = 0
         dropdownLanguage?.setOnClickListener { dropdownLanguage.post { dropdownLanguage.showDropDown() } }
         dropdownLanguage?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownLanguage.post { dropdownLanguage.showDropDown() } }
 
@@ -422,6 +428,7 @@ class MainActivity : AppCompatActivity() {
         val themeOptions = arrayOf("System Default", "Light Mode", "Dark Mode")
         val themeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, themeOptions)
         dropdownTheme?.setAdapter(themeAdapter)
+        dropdownTheme?.threshold = 0
         dropdownTheme?.setOnClickListener { dropdownTheme.post { dropdownTheme.showDropDown() } }
         dropdownTheme?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownTheme.post { dropdownTheme.showDropDown() } }
         val currentTheme = prefs.getString(SettingsActivity.KEY_THEME, "System Default")
@@ -455,7 +462,7 @@ class MainActivity : AppCompatActivity() {
             picker.addOnPositiveButtonClickListener {
                 val newTime = String.format(Locale.getDefault(), "%02d:%02d", picker.hour, picker.minute)
                 prefs.edit().putString(SettingsActivity.KEY_DEFAULT_DUE_TIME, newTime).apply()
-                btnDefaultTime.text = "Default Task Time: $newTime"
+                btnDefaultTime?.text = "Default Task Time: $newTime"
                 Toast.makeText(this, "Default time saved", Toast.LENGTH_SHORT).show()
             }
             picker.show(supportFragmentManager, "DEFAULT_TIME_PICKER")
@@ -464,8 +471,9 @@ class MainActivity : AppCompatActivity() {
         val behaviorOptions = arrayOf("Keep in Place", "Move to Bottom", "Hide Immediately")
         val behaviorAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, behaviorOptions)
         dropdownBehavior?.setAdapter(behaviorAdapter)
-        dropdownBehavior?.setOnClickListener { dropdownBehavior.showDropDown() }
-        dropdownBehavior?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownBehavior.showDropDown() }
+        dropdownBehavior?.threshold = 0
+        dropdownBehavior?.setOnClickListener { dropdownBehavior.post { dropdownBehavior.showDropDown() } }
+        dropdownBehavior?.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) dropdownBehavior.post { dropdownBehavior.showDropDown() } }
         val currentBehavior = prefs.getString(SettingsActivity.KEY_COMPLETED_BEHAVIOR, "Move to Bottom")
         dropdownBehavior?.setText(currentBehavior, false)
         dropdownBehavior?.setOnItemClickListener { _, _, position, _ ->
