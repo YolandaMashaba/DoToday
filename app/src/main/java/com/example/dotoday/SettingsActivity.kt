@@ -179,6 +179,7 @@ class SettingsActivity : AppCompatActivity() {
                 .setTitle("Log Out")
                 .setMessage("Are you sure you want to log out of DoToday?")
                 .setPositiveButton("Log Out") { _, _ ->
+                    prefs.edit().putBoolean(KEY_IS_LOGGED_IN, false).apply()
                     Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
                     val intent = Intent(this, LoginActivity::class.java).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
