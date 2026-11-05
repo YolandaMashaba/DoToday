@@ -21,6 +21,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dotoday.data.TodoistRepository
@@ -181,6 +182,88 @@ class MainActivity : AppCompatActivity() {
             }
         )
         recycler.adapter = timelineAdapter
+
+        // Swipe task to side to open task actions bottom sheet with Edit and Delete icons
+        val touchHelperCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean = false
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.bindingAdapterPosition
+                val entries = tasksByDay[selectedDayNumber] ?: return
+                if (position !in entries.indices) return
+                val entry = entries[position]
+
+                // Reset swiped item view state immediately
+                timelineAdapter.notifyItemChanged(position)
+
+                if (entry !is TimelineEntry.Task) return
+
+                // Show Bottom Sheet Dialog with Edit and Delete icons
+                val bottomSheet = com.google.android.material.bottomsheet.BottomSheetDialog(this@MainActivity)
+                val sheetView = layoutInflater.inflate(R.layout.dialog_task_actions, findViewById(android.R.id.content), false)
+                bottomSheet.setContentView(sheetView)
+
+                sheetView.findViewById<View>(R.id.btn_sheet_edit)?.setOnClickListener {
+                    bottomSheet.dismiss()
+                    showEditTaskDialog(entry, position)
+                }
+
+                sheetView.findViewById<View>(R.id.btn_sheet_delete)?.setOnClickListener {
+                    bottomSheet.dismiss()
+                    entries.removeAt(position)
+                    timelineAdapter.updateEntries(entries)
+                    Snackbar.make(recycler, "Task deleted", Snackbar.LENGTH_LONG)
+                        .setAction("Undo") {
+                            entries.add(position, entry)
+                            timelineAdapter.updateEntries(entries)
+                        }.show()
+                }
+
+                bottomSheet.show()
+            }
+        }
+
+        ItemTouchHelper(touchHelperCallback).attachToRecyclerView(recycler)
+    }
+
+    private fun showEditTaskDialog(task: TimelineEntry.Task, position: Int) {
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_add_task, null)
+        val etTitle = view.findViewById<TextInputEditText>(R.id.et_task_title)
+        val etDescription = view.findViewById<TextInputEditText>(R.id.et_task_description)
+
+        etTitle?.setText(task.title)
+        etDescription?.setText(task.subtitle)
+        view.findViewById<TextView>(R.id.tv_dialog_title)?.text = "Edit Task"
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle("Edit Task")
+            .setView(view)
+            .setPositiveButton("Save") { _, _ ->
+                val newTitle = etTitle?.text?.toString()?.trim().orEmpty()
+                val newDesc = etDescription?.text?.toString()?.trim()
+                if (newTitle.isNotEmpty()) {
+                    task.copy(title = newTitle, subtitle = newDesc ?: "").let { updated ->
+                        val entries = tasksByDay[selectedDayNumber] ?: mutableListOf()
+                        if (position in entries.indices) {
+                            entries[position] = updated
+                            timelineAdapter.updateEntries(entries)
+                            Toast.makeText(this, "Task updated", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                val entries = tasksByDay[selectedDayNumber] ?: mutableListOf()
+                timelineAdapter.updateEntries(entries)
+            }
+            .setOnCancelListener {
+                val entries = tasksByDay[selectedDayNumber] ?: mutableListOf()
+                timelineAdapter.updateEntries(entries)
+            }
+            .show()
+
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(getColor(R.color.app_secondary))
+        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(getColor(R.color.text_secondary_color))
     }
 
     private fun setupCalendar() {
