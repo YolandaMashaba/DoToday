@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -11,7 +12,7 @@
         android:id="@+id/tv_dialog_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Schedule Task"
+        android:text="@string/task_new_schedule"
         android:textColor="?attr/colorOnSurface"
         android:textSize="20sp"
         android:textStyle="bold" />
@@ -21,7 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:hint="Task Title"
+        android:hint="@string/task_title_hint"
         android:textColorHint="?attr/colorOnSurfaceVariant"
         app:boxBackgroundColor="?attr/colorSurfaceContainer"
         app:hintTextColor="@color/app_secondary"
@@ -33,6 +34,7 @@
             android:layout_height="wrap_content"
             android:textColor="?attr/colorOnSurface"
             android:textCursorDrawable="@null" />
+
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
@@ -40,7 +42,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:hint="Description (Optional)"
+        android:hint="@string/task_description_hint"
         android:textColorHint="?attr/colorOnSurfaceVariant"
         app:boxBackgroundColor="?attr/colorSurfaceContainer"
         app:hintTextColor="@color/app_secondary"
@@ -52,6 +54,7 @@
             android:layout_height="wrap_content"
             android:textColor="?attr/colorOnSurface"
             android:textCursorDrawable="@null" />
+
     </com.google.android.material.textfield.TextInputLayout>
 
     <LinearLayout
@@ -67,7 +70,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Start Time"
+            android:text="@string/task_start_time"
             android:textColor="@color/app_secondary"
             app:strokeColor="@color/app_secondary" />
 
@@ -81,7 +84,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="End Time"
+            android:text="@string/task_end_time"
             android:textColor="@color/app_secondary"
             app:strokeColor="@color/app_secondary" />
 
@@ -94,7 +97,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Min"
+            android:hint="@string/task_minutes"
             android:textColorHint="?attr/colorOnSurfaceVariant"
             app:boxBackgroundColor="?attr/colorSurfaceContainer"
             app:hintTextColor="@color/app_secondary"
@@ -107,11 +110,13 @@
                 android:inputType="number"
                 android:textColor="?attr/colorOnSurface"
                 android:textCursorDrawable="@null"
-                android:padding="8dp"/>
+                android:padding="8dp" />
+
         </com.google.android.material.textfield.TextInputLayout>
+
     </LinearLayout>
 
-    <!-- Repeat Options Section -->
+    <!-- Repeat Task -->
     <LinearLayout
         android:id="@+id/layout_repeat_section"
         android:layout_width="match_parent"
@@ -123,7 +128,7 @@
             android:id="@+id/switch_repeat_task"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Repeat Task"
+            android:text="@string/task_repeat"
             android:textColor="?attr/colorOnSurface"
             android:textSize="15sp"
             android:textStyle="bold"
@@ -138,13 +143,12 @@
             android:orientation="horizontal"
             android:visibility="gone">
 
-            <!-- Frequency Dropdown -->
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="Frequency"
+                android:hint="@string/task_frequency"
                 android:textColorHint="?attr/colorOnSurfaceVariant"
                 app:boxBackgroundColor="?attr/colorSurfaceContainer"
                 app:boxStrokeColor="@color/app_secondary">
@@ -154,21 +158,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="none"
-                    android:text="Daily"
+                    android:text="@string/task_daily"
                     android:textColor="?attr/colorOnSurface" />
+
             </com.google.android.material.textfield.TextInputLayout>
 
             <View
                 android:layout_width="8dp"
                 android:layout_height="0dp" />
 
-            <!-- Duration Input -->
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="For (Count)"
+                android:hint="@string/task_repeat_count"
                 android:textColorHint="?attr/colorOnSurfaceVariant"
                 app:boxBackgroundColor="?attr/colorSurfaceContainer"
                 app:boxStrokeColor="@color/app_secondary">
@@ -180,9 +184,11 @@
                     android:inputType="number"
                     android:text="7"
                     android:textColor="?attr/colorOnSurface" />
+
             </com.google.android.material.textfield.TextInputLayout>
 
         </LinearLayout>
+
     </LinearLayout>
 
 </LinearLayout>

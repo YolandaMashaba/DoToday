@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -22,7 +23,7 @@
         app:layout_constraintTop_toTopOf="@id/iv_icon_background"
         tools:text="08:00" />
 
-    <!-- Top Vertical Connector Line -->
+    <!-- Top connector -->
     <View
         android:id="@+id/line_top"
         android:layout_width="3dp"
@@ -33,7 +34,7 @@
         app:layout_constraintStart_toStartOf="@id/iv_icon_background"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Circular Icon Badge Node -->
+    <!-- Task icon background -->
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/iv_icon_background"
         android:layout_width="52dp"
@@ -45,19 +46,20 @@
         app:layout_constraintTop_toTopOf="parent"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.DoToday.Circle" />
 
+    <!-- Task icon -->
     <ImageView
         android:id="@+id/iv_icon"
         android:layout_width="26dp"
         android:layout_height="26dp"
         android:src="@drawable/ic_alarm"
+        android:contentDescription="@string/task_icon_description"
         app:layout_constraintBottom_toBottomOf="@id/iv_icon_background"
         app:layout_constraintEnd_toEndOf="@id/iv_icon_background"
         app:layout_constraintStart_toStartOf="@id/iv_icon_background"
         app:layout_constraintTop_toTopOf="@id/iv_icon_background"
-        app:tint="@color/white"
-        android:contentDescription="Task Icon" />
+        app:tint="@color/white" />
 
-    <!-- Bottom Vertical Connector Line -->
+    <!-- Bottom connector -->
     <View
         android:id="@+id/line_bottom"
         android:layout_width="3dp"
@@ -68,7 +70,7 @@
         app:layout_constraintStart_toStartOf="@id/iv_icon_background"
         app:layout_constraintTop_toBottomOf="@id/iv_icon_background" />
 
-    <!-- Task Info Block -->
+    <!-- Task information -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -80,7 +82,6 @@
         app:layout_constraintStart_toEndOf="@id/iv_icon_background"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Time & Repeat Row -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -101,11 +102,11 @@
                 android:layout_height="14dp"
                 android:layout_marginStart="4dp"
                 android:src="@drawable/ic_repeat"
-                app:tint="?attr/colorOnSurfaceVariant"
-                android:contentDescription="Repeat Icon" />
+                android:contentDescription="@string/task_repeat_description"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
         </LinearLayout>
 
-        <!-- Title -->
         <TextView
             android:id="@+id/tv_task_title"
             android:layout_width="wrap_content"
@@ -116,7 +117,6 @@
             android:textStyle="bold"
             tools:text="Rise and Shine" />
 
-        <!-- Subtitle/Description if any -->
         <TextView
             android:id="@+id/tv_task_subtitle"
             android:layout_width="wrap_content"
@@ -128,7 +128,7 @@
 
     </LinearLayout>
 
-    <!-- Check Ring Button -->
+    <!-- Complete Task Button -->
     <ImageView
         android:id="@+id/btn_complete"
         android:layout_width="32dp"
@@ -137,10 +137,10 @@
         android:focusable="true"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_check_ring"
+        android:contentDescription="@string/task_complete_description"
         app:tint="@color/app_secondary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:contentDescription="Complete Task" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

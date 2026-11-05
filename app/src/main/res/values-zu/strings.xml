@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_inbox">Ibhokisi lokungenayo</string>
+    <string name="nav_timeline">Umugqa wesikhathi</string>
+    <string name="nav_notes">Amanothi</string>
+    <string name="nav_settings">Izilungiselelo</string>
+
+    <string name="settings_language">Ulimi lohlelo lokusebenza</string>
+    <string name="settings_select_language">Khetha ulimi</string>
+    <string name="settings_follow_system">Sebenzisa ulimi lwedivayisi</string>
+    <string name="settings_theme">Itimu yohlelo lokusebenza</string>
+    <string name="settings_default_time">Isikhathi esijwayelekile somsebenzi</string>
+    <string name="settings_completed_action">Okwenziwayo uma umsebenzi usuqediwe</string>
+    <string name="settings_haptic_feedback">Ukudlidliza uma umsebenzi usuqediwe</string>
+
+
+    <!-- UKUNGENA NOKUBHALISA -->
+
+    <string name="auth_welcome_back">Siyakwamukela futhi</string>
+    <string name="auth_login_button">Ngena ngemvume</string>
+    <string name="auth_go_register">Awunayo i-akhawunti? Bhalisa</string>
+    <string name="auth_create_account">Dala i-akhawunti</string>
+    <string name="auth_join_today">Joyina i-DoToday namuhla</string>
+    <string name="auth_email_hint">Ikheli le-imeyili</string>
+    <string name="auth_password_min_hint">Iphasiwedi (okungenani izinhlamvu eziyi-8)</string>
+    <string name="auth_password_hint">Iphasiwedi</string>
+    <string name="auth_confirm_password">Qinisekisa iphasiwedi</string>
+    <string name="auth_register_button">Bhalisa</string>
+    <string name="auth_go_login">Usunayo i-akhawunti? Ngena ngemvume</string>
+
+    <!-- IMILAYEZO YOKUQINISEKISA -->
+
+    <string name="auth_email_required">Ikheli le-imeyili liyadingeka</string>
+    <string name="auth_invalid_email">Faka ikheli le-imeyili elivumelekile</string>
+    <string name="auth_password_required">Iphasiwedi iyadingeka</string>
+    <string name="auth_login_success">Ungene ngemvume ngempumelelo!</string>
+    <string name="auth_password_minimum">Iphasiwedi kufanele ibe nezinhlamvu okungenani eziyi-8</string>
+    <string name="auth_password_mismatch">Amaphasiwedi awafani</string>
+    <string name="auth_register_success">I-akhawunti idalwe ngempumelelo!</string>
+
+
+    <!-- IBHOKISI LOKUNGENAYO -->
+    <string name="inbox_title">Ibhokisi lokungenayo</string>
+    <string name="inbox_empty_title">Imicabango Yami Engakahleleki</string>
+    <string name="inbox_empty_description">Bhala imisebenzi nemicabango uma ikufikela. Yifake ohlelweni lwakho lwesikhathi uma usulungele ukuyihlela.</string>
+    <string name="inbox_new_task">+ Umsebenzi Omusha</string>
+    <string name="inbox_dialog_title">Umsebenzi Omusha</string>
+    <string name="inbox_fetch_error">Yehlulekile ukulanda imisebenzi: %1$s</string>
+    <string name="inbox_add_error">Yehlulekile ukwengeza umsebenzi: %1$s</string>
+    <string name="inbox_add_success">Umsebenzi ungeziwe ku-Todoist</string>
+
+    <!-- AMANOTHI -->
+    <string name="notes_title">Amanothi Ami</string>
+    <string name="notes_hint">Bhala amanothi akho lapha...</string>
+
+    <!-- IMISEBENZI -->
+    <string name="task_new_schedule">Hlela Umsebenzi Omusha</string>
+    <string name="task_title_hint">Isihloko Somsebenzi</string>
+    <string name="task_description_hint">Incazelo (Uma ikhona)</string>
+    <string name="task_start_time">Isikhathi Sokuqala</string>
+    <string name="task_end_time">Isikhathi Sokuphela</string>
+    <string name="task_minutes">Imiz.</string>
+    <string name="task_repeat">Phinda Umsebenzi</string>
+    <string name="task_frequency">Ukuphindaphinda</string>
+    <string name="task_repeat_count">Inani Lokuphinda</string>
+    <string name="task_daily">Nsuku zonke</string>
+    <string name="task_weekly">Masonto onke</string>
+    <string name="task_monthly">Nyanga zonke</string>
+    <string name="task_add">Engeza</string>
+    <string name="task_cancel">Khansela</string>
+    <string name="task_icon_description">Isithonjana somsebenzi</string>
+    <string name="task_repeat_description">Isithonjana sokuphinda</string>
+    <string name="task_complete_description">Qedela umsebenzi</string>
+    <string name="task_checkbox_description">Ibhokisi lokukhetha</string>
+    <string name="task_timer_description">Isithonjana sesibali-sikhathi</string>
+    <string name="task_add_inline">+ Engeza Umsebenzi</string>
+    <string name="task_added_day">Umsebenzi \'%1$s\' ungeziwe osukwini %2$s</string>
+    <string name="task_repeated">Umsebenzi \'%1$s\' uhlelwe ukuba uphindwe izikhathi ezingu-%2$d (%3$s)!</string>
+    <string name="task_days">izinsuku</string>
+    <string name="task_weeks">amasonto</string>
+    <string name="task_required">Sicela ufake isihloko somsebenzi</string>
+
+    <!-- IKHALENDA -->
+    <string name="calendar_overview">Ikhalenda Nemisebenzi</string>
+    <string name="calendar_no_tasks">Ayikho imisebenzi ehlelelwe lolu suku.</string>
+    <string name="calendar_tasks_for">Imisebenzi yosuku %1$s:</string>
+    <string name="calendar_view_timeline">Buka Uhlelo Lwesikhathi</string>
+    <string name="calendar_close">Vala</string>
+    <string name="calendar_switched">Kushintshelwe ku-%1$s</string>
+    <string name="calendar_empty_day">Ayikho imisebenzi yosuku %1$s. Cindezela u-+ ukuze wengeze!</string>
+
+    <!-- OKUJWAYELEKILE -->
+    <string name="general_logout">Phuma ngemvume</string>
+    <string name="general_logout_success">Uphume ngemvume ngempumelelo!</string>
+    <string name="general_section_soon">Isigaba se-%1$s sizotholakala maduze!</string>
+    <string name="general_profile_picture">Isithombe sephrofayela</string>
+</resources>
