@@ -28,6 +28,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.dotoday.data.TodoistRepository
 import com.example.dotoday.data.TodoistTask
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -91,8 +93,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var inboxAdapter: InboxAdapter
     private val dayViewsMap = mutableMapOf<String, Pair<View, TextView>>()
     private val todoistRepository by lazy { TodoistRepository(applicationContext) }
+    private val taskStorageKey = "dotoday_timeline_tasks_v1"
+    private val tasksByDay = mutableMapOf<String, MutableList<TimelineEntry>>()
 
-    private val tasksByDay = mutableMapOf<String, MutableList<TimelineEntry>>(
+    private fun defaultTasksByDay(): Map<String, MutableList<TimelineEntry>> = mapOf(
         "20" to mutableListOf(
             TimelineEntry.Task("1", "07:30", "08:00", "Morning Meditation", "15 mins focus", R.drawable.ic_alarm),
             TimelineEntry.Interval(listOf("11:00", "15:00"), getCurrentTimeFormatted(), "3h 15m left — time to focus!"),
@@ -130,9 +134,72 @@ class MainActivity : AppCompatActivity() {
         )
     )
 
+    private fun loadTasksFromPrefs(): Map<String, MutableList<TimelineEntry>> {
+        val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        val json = prefs.getString(taskStorageKey, null) ?: return emptyMap()
+        return try {
+            val type = object : TypeToken<Map<String, List<TaskSnapshot>>>() {}.type
+            val snapshots = Gson().fromJson<Map<String, List<TaskSnapshot>>>(json, type) ?: emptyMap()
+            snapshots.mapValues { (_, value) -> value.map { it.toTimelineEntry() }.toMutableList() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load saved tasks", e)
+            emptyMap()
+        }
+    }
+
+    private fun saveTasksToPrefs() {
+        val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        val snapshots = tasksByDay.mapValues { (_, entries) ->
+            entries.filterIsInstance<TimelineEntry.Task>().map { TaskSnapshot.from(it) }
+        }
+        prefs.edit().putString(taskStorageKey, Gson().toJson(snapshots)).apply()
+    }
+
+    private data class TaskSnapshot(
+        val id: String,
+        val time: String,
+        val endTime: String,
+        val title: String,
+        val subtitle: String,
+        val iconRes: Int,
+        val isCompleted: Boolean,
+        val isRepeat: Boolean
+    ) {
+        fun toTimelineEntry(): TimelineEntry.Task = TimelineEntry.Task(
+            id = id,
+            time = time,
+            endTime = endTime,
+            title = title,
+            subtitle = subtitle,
+            iconRes = iconRes,
+            isCompleted = isCompleted,
+            isRepeat = isRepeat
+        )
+
+        companion object {
+            fun from(entry: TimelineEntry.Task): TaskSnapshot = TaskSnapshot(
+                id = entry.id,
+                time = entry.time,
+                endTime = entry.endTime,
+                title = entry.title,
+                subtitle = entry.subtitle,
+                iconRes = entry.iconRes,
+                isCompleted = entry.isCompleted,
+                isRepeat = entry.isRepeat
+            )
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applySavedTheme()
+
+        val savedTasks = loadTasksFromPrefs()
+        if (savedTasks.isEmpty()) {
+            tasksByDay.putAll(defaultTasksByDay())
+        } else {
+            tasksByDay.putAll(savedTasks)
+        }
 
         // Initialize Firebase Cloud Messaging notifications and local task reminders
         FirebaseNotificationSetup.initialize(this)
@@ -217,10 +284,12 @@ class MainActivity : AppCompatActivity() {
                 sheetView.findViewById<View>(R.id.btn_sheet_delete)?.setOnClickListener {
                     bottomSheet.dismiss()
                     entries.removeAt(position)
+                    saveTasksToPrefs()
                     timelineAdapter.updateEntries(entries)
                     Snackbar.make(recycler, "Task deleted", Snackbar.LENGTH_LONG)
                         .setAction("Undo") {
                             entries.add(position, entry)
+                            saveTasksToPrefs()
                             timelineAdapter.updateEntries(entries)
                         }.show()
                 }
@@ -285,6 +354,7 @@ class MainActivity : AppCompatActivity() {
                         val entries = tasksByDay[selectedDayNumber] ?: mutableListOf()
                         if (position in entries.indices) {
                             entries[position] = updated
+                            saveTasksToPrefs()
                             timelineAdapter.updateEntries(entries)
                             Toast.makeText(this, "Task updated", Toast.LENGTH_SHORT).show()
                         }
@@ -462,6 +532,7 @@ class MainActivity : AppCompatActivity() {
                     entries.add(if (lastTask >= 0) lastTask + 1 else entries.size, newTask)
                     dayViewsMap[dayNumber]?.first?.let { updateDayDots(dayNumber, it) }
                 }
+                saveTasksToPrefs()
                 timelineAdapter.updateEntries(tasksByDay[selectedDayNumber] ?: mutableListOf())
             }
             .setNegativeButton("Cancel", null)
