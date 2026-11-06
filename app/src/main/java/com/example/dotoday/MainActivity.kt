@@ -1,5 +1,6 @@
 package com.example.dotoday
 
+import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
@@ -55,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "MainActivity"
     }
 
-    data class DayInfo(val name: String, val fullName: String, val number: String)
+    data class DayInfo(val name: String, val fullName: String, val number: String, val dateKey: String)
 
     sealed class TimelineEntry {
         data class Task(
@@ -76,21 +77,26 @@ class MainActivity : AppCompatActivity() {
         ) : TimelineEntry()
     }
 
+    private val dateKeyFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private var selectedDate: Calendar = Calendar.getInstance()
+    private fun dateKey(date: Calendar): String = dateKeyFormatter.format(date.time)
+    private fun calendarForKey(key: String): Calendar = Calendar.getInstance().apply {
+        val parsed = runCatching { dateKeyFormatter.parse(key) }.getOrNull()
+        if (parsed != null) time = parsed
+    }
+
     private val daysList: List<DayInfo>
         get() {
             val locale = resources.configuration.locales[0]
-            val today = Calendar.getInstance()
-            val currentDay = today.get(Calendar.DAY_OF_MONTH)
-            val startDay = currentDay - 3
-            val endDay = currentDay + 3
-            return (startDay..endDay).map { day ->
-                val date = Calendar.getInstance().apply {
-                    set(Calendar.DAY_OF_MONTH, day)
+            return (-3..3).map { offset ->
+                val date = (selectedDate.clone() as Calendar).apply {
+                    add(Calendar.DAY_OF_YEAR, offset)
                 }
                 DayInfo(
                     SimpleDateFormat("EEE", locale).format(date.time),
                     SimpleDateFormat("d MMMM yyyy", locale).format(date.time) + " >",
-                    date.get(Calendar.DAY_OF_MONTH).toString()
+                    date.get(Calendar.DAY_OF_MONTH).toString(),
+                    dateKey(date)
                 )
             }
         }
@@ -103,50 +109,13 @@ class MainActivity : AppCompatActivity() {
     private val taskStorageKey = "dotoday_timeline_tasks_v1"
     private val tasksByDay = mutableMapOf<String, MutableList<TimelineEntry>>()
 
-    private fun defaultTasksByDay(): Map<String, MutableList<TimelineEntry>> = mapOf(
-        "20" to mutableListOf(
-            TimelineEntry.Task("1", "07:30", "08:00", "Morning Meditation", "15 mins focus", R.drawable.ic_alarm),
-            TimelineEntry.Interval(listOf("11:00", "15:00"), getCurrentTimeFormatted(), "3h 15m left — time to focus!"),
-            TimelineEntry.Task("2", "21:30", "22:00", "Read Book", "20 pages", R.drawable.ic_moon)
-        ),
-        "21" to mutableListOf(
-            TimelineEntry.Task("1", "08:00", "09:00", "Morning Jog", "Park run", R.drawable.ic_alarm),
-            TimelineEntry.Interval(listOf("12:00", "16:00"), getCurrentTimeFormatted(), "1h 45m left — stay energized!"),
-            TimelineEntry.Task("2", "22:00", "22:30", "Wind Down", "Sleep preparation", R.drawable.ic_moon)
-        ),
-        "22" to mutableListOf(
-            TimelineEntry.Task("1", "08:00", "08:30", "Rise and Shine", "", R.drawable.ic_alarm, isRepeat = true),
-            TimelineEntry.Interval(listOf("12:00", "16:00"), "19:23", "2h 37m left — then, let's dive in!"),
-            TimelineEntry.Task("2", "22:00", "22:30", "Wind Down", "", R.drawable.ic_moon, isRepeat = true)
-        ),
-        "23" to mutableListOf(
-            TimelineEntry.Task("1", "09:00", "10:00", "Team Standup", "Project sync", R.drawable.ic_timeline),
-            TimelineEntry.Interval(listOf("13:00", "17:00"), getCurrentTimeFormatted(), "4h 00m left — ready for next task"),
-            TimelineEntry.Task("2", "21:45", "22:15", "Journal & Plan", "", R.drawable.ic_settings)
-        ),
-        "24" to mutableListOf(
-            TimelineEntry.Task("1", "08:15", "08:45", "Morning Stretch", "Flexibility routine", R.drawable.ic_alarm),
-            TimelineEntry.Interval(listOf("12:30", "16:30"), getCurrentTimeFormatted(), "2h 10m left — deep work time"),
-            TimelineEntry.Task("2", "22:00", "22:30", "Wind Down", "", R.drawable.ic_moon)
-        ),
-        "25" to mutableListOf(
-            TimelineEntry.Task("1", "08:00", "09:00", "Workout & Breakfast", "", R.drawable.ic_alarm),
-            TimelineEntry.Interval(listOf("13:00", "17:00"), getCurrentTimeFormatted(), "3h 30m left — finish the week strong!"),
-            TimelineEntry.Task("2", "22:30", "23:00", "Night Relaxation", "", R.drawable.ic_moon)
-        ),
-        "26" to mutableListOf(
-            TimelineEntry.Task("1", "09:30", "10:30", "Weekend Breakfast", "Family time", R.drawable.ic_alarm),
-            TimelineEntry.Interval(listOf("14:00", "18:00"), getCurrentTimeFormatted(), "5h 00m left — enjoy weekend!"),
-            TimelineEntry.Task("2", "23:00", "23:30", "Late Rest", "", R.drawable.ic_moon)
-        )
-    )
-
     private fun loadTasksFromPrefs(): Map<String, MutableList<TimelineEntry>> {
         val prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
         val json = prefs.getString(taskStorageKey, null) ?: return emptyMap()
         return try {
             val type = object : TypeToken<Map<String, List<TaskSnapshot>>>() {}.type
             val snapshots = Gson().fromJson<Map<String, List<TaskSnapshot>>>(json, type) ?: emptyMap()
+            // Preserve legacy day-number records; their original month is unknown.
             snapshots.mapValues { (_, value) -> value.map { it.toTimelineEntry() }.toMutableList() }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load saved tasks", e)
@@ -200,8 +169,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applySavedTheme()
-        selectedDayNumber = Calendar.getInstance().get(Calendar.DAY_OF_MONTH).toString()
-        tasksByDay.putAll(defaultTasksByDay())
+        selectedDayNumber = dateKey(selectedDate)
 
         // Initialize Firebase Cloud Messaging notifications and local task reminders
         FirebaseNotificationSetup.initialize(this)
@@ -217,12 +185,11 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val savedTasks = withContext(Dispatchers.IO) { loadTasksFromPrefs() }
             if (savedTasks.isNotEmpty()) {
-                tasksByDay.clear()
                 tasksByDay.putAll(savedTasks)
                 runOnUiThread {
                     setupCalendar()
                     setupTimeline()
-                    selectCalendarDay(daysList.firstOrNull { it.number == selectedDayNumber } ?: daysList.first(), animate = false)
+                    selectCalendarDay(daysList.firstOrNull { it.dateKey == selectedDayNumber } ?: daysList[3], animate = false)
                 }
             }
         }
@@ -271,6 +238,12 @@ class MainActivity : AppCompatActivity() {
             (tasksByDay[selectedDayNumber] ?: mutableListOf()).toMutableList(),
             onAddTaskClicked = { showAddTaskDialog() },
             onTaskToggleCompleted = { task ->
+                if (task.isCompleted) {
+                    TaskReminderScheduler.cancelReminder(this, task.id.hashCode())
+                } else {
+                    scheduleReminderForTask(task, selectedDayNumber)
+                }
+                saveTasksToPrefs()
                 Log.i(TAG, "Task completion updated: ${task.isCompleted}")
                 timelineAdapter.notifyDataSetChanged()
             }
@@ -304,12 +277,14 @@ class MainActivity : AppCompatActivity() {
 
                 sheetView.findViewById<View>(R.id.btn_sheet_delete)?.setOnClickListener {
                     bottomSheet.dismiss()
+                    TaskReminderScheduler.cancelReminder(this@MainActivity, entry.id.hashCode())
                     entries.removeAt(position)
                     saveTasksToPrefs()
                     timelineAdapter.updateEntries(entries)
                     Snackbar.make(recycler, "Task deleted", Snackbar.LENGTH_LONG)
                         .setAction("Undo") {
                             entries.add(position, entry)
+                            if (!entry.isCompleted) scheduleReminderForTask(entry, selectedDayNumber)
                             saveTasksToPrefs()
                             timelineAdapter.updateEntries(entries)
                         }.show()
@@ -374,7 +349,9 @@ class MainActivity : AppCompatActivity() {
                     ).let { updated ->
                         val entries = tasksByDay[selectedDayNumber] ?: mutableListOf()
                         if (position in entries.indices) {
+                            TaskReminderScheduler.cancelReminder(this, task.id.hashCode())
                             entries[position] = updated
+                            if (!updated.isCompleted) scheduleReminderForTask(updated, selectedDayNumber)
                             saveTasksToPrefs()
                             timelineAdapter.updateEntries(entries)
                             Toast.makeText(this, "Task updated", Toast.LENGTH_SHORT).show()
@@ -401,38 +378,32 @@ class MainActivity : AppCompatActivity() {
         container.removeAllViews()
         dayViewsMap.clear()
         val inflater = LayoutInflater.from(this)
-        val currentMonth = Calendar.getInstance().get(Calendar.MONTH)
-        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
         daysList.forEach { day ->
             val item = inflater.inflate(R.layout.item_calendar_day, container, false)
             item.findViewById<TextView>(R.id.tv_day_name).text = day.name
             val number = item.findViewById<TextView>(R.id.tv_day_number)
             number.text = day.number
-            dayViewsMap[day.number] = item to number
-            updateDayDots(day.number, item)
+            dayViewsMap[day.dateKey] = item to number
+            updateDayDots(day.dateKey, item)
             item.setOnClickListener { selectCalendarDay(day, animate = true) }
             container.addView(item)
         }
-        val selected = daysList.firstOrNull { it.number == selectedDayNumber }
-            ?: daysList.firstOrNull { it.number == Calendar.getInstance().get(Calendar.DAY_OF_MONTH).toString() }
-            ?: daysList.first()
-        selectedDayNumber = selected.number
-        selectCalendarDay(selected, animate = false)
-        findViewById<TextView>(R.id.tv_month_year)?.text = selected.fullName
+        selectCalendarDay(daysList.first { it.dateKey == selectedDayNumber }, animate = false)
     }
 
-    private fun updateDayDots(dayNumber: String, dayView: View) {
-        val count = (tasksByDay[dayNumber] ?: emptyList()).count { it is TimelineEntry.Task }
+    private fun updateDayDots(key: String, dayView: View) {
+        val count = (tasksByDay[key] ?: emptyList()).count { it is TimelineEntry.Task }
         dayView.findViewById<View>(R.id.dot1)?.visibility = if (count > 0) View.VISIBLE else View.GONE
         dayView.findViewById<View>(R.id.dot2)?.visibility = if (count > 1) View.VISIBLE else View.GONE
     }
 
     private fun selectCalendarDay(day: DayInfo, animate: Boolean) {
-        selectedDayNumber = day.number
+        selectedDayNumber = day.dateKey
+        selectedDate = calendarForKey(day.dateKey)
         findViewById<TextView>(R.id.tv_month_year)?.text = day.fullName
-        dayViewsMap.forEach { (number, pair) ->
+        dayViewsMap.forEach { (key, pair) ->
             val (view, label) = pair
-            if (number == day.number) {
+            if (key == day.dateKey) {
                 label.setBackgroundResource(R.drawable.shape_circle_small)
                 label.backgroundTintList = getColorStateList(R.color.app_secondary)
                 label.setTextColor(getColor(R.color.white))
@@ -443,7 +414,7 @@ class MainActivity : AppCompatActivity() {
                 label.setTextColor(getThemeColor(com.google.android.material.R.attr.colorOnSurface))
             }
         }
-        val entries = tasksByDay[day.number] ?: mutableListOf()
+        val entries = tasksByDay[day.dateKey] ?: mutableListOf()
         timelineAdapter.updateEntries(entries)
         if (entries.none { it is TimelineEntry.Task } && animate) {
             Snackbar.make(findViewById(R.id.main), "No tasks for ${day.fullName}. Tap + to add!", Snackbar.LENGTH_SHORT).show()
@@ -463,41 +434,56 @@ class MainActivity : AppCompatActivity() {
         val empty = dialogView.findViewById<TextView>(R.id.tv_no_tasks_preview)
         val preview = dialogView.findViewById<RecyclerView>(R.id.rv_dialog_tasks_preview)
         preview.layoutManager = LinearLayoutManager(this)
-        var selectedDay = selectedDayNumber
-        var selectedFullName = daysList.firstOrNull { it.number == selectedDay }?.fullName ?: selectedDay
+        var pickerDate = selectedDate.clone() as Calendar
 
-        fun updatePreview(day: String, fullName: String) {
+        fun updatePreview() {
+            val key = dateKey(pickerDate)
+            val fullName = SimpleDateFormat("d MMMM yyyy", resources.configuration.locales[0]).format(pickerDate.time)
             header.text = "Tasks for $fullName:"
-            val tasks = (tasksByDay[day] ?: emptyList()).filterIsInstance<TimelineEntry.Task>()
+            val tasks = (tasksByDay[key] ?: emptyList()).filterIsInstance<TimelineEntry.Task>()
             empty.visibility = if (tasks.isEmpty()) View.VISIBLE else View.GONE
             preview.visibility = if (tasks.isEmpty()) View.GONE else View.VISIBLE
             if (tasks.isNotEmpty()) preview.adapter = DialogTaskPreviewAdapter(tasks)
         }
 
-        val today = Calendar.getInstance()
-        val targetDay = selectedDay.toIntOrNull() ?: today.get(Calendar.DAY_OF_MONTH)
-        today.apply {
-            set(Calendar.DAY_OF_MONTH, targetDay)
-        }.also { calendar.date = it.timeInMillis }
-        updatePreview(selectedDay, selectedFullName)
+        calendar.date = pickerDate.timeInMillis
+        updatePreview()
         calendar.setOnDateChangeListener { _, year, month, dayOfMonth ->
-            selectedDay = dayOfMonth.toString()
-            val date = Calendar.getInstance().apply { set(year, month, dayOfMonth) }
-            selectedFullName = SimpleDateFormat("d MMMM yyyy", resources.configuration.locales[0]).format(date.time) + " >"
-            updatePreview(selectedDay, selectedFullName)
+            pickerDate = Calendar.getInstance().apply { set(year, month, dayOfMonth) }
+            updatePreview()
         }
-
         val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
             .setPositiveButton("View Timeline") { _, _ ->
-                val day = daysList.firstOrNull { it.number == selectedDay }
-                    ?: DayInfo("", selectedFullName, selectedDay)
-                selectCalendarDay(day, animate = true)
+                selectedDate = pickerDate.clone() as Calendar
+                selectedDayNumber = dateKey(selectedDate)
+                setupCalendar()
             }
             .setNegativeButton("Close", null)
             .show()
         dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)?.setTextColor(getColor(R.color.app_secondary))
         dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.setTextColor(getColor(R.color.text_secondary_color))
+    }
+
+    private fun scheduleReminderForTask(task: TimelineEntry.Task, key: String): Boolean {
+        if (task.isCompleted) return false
+        val parts = task.time.split(":")
+        val hour = parts.getOrNull(0)?.toIntOrNull() ?: return false
+        val minute = parts.getOrNull(1)?.toIntOrNull() ?: return false
+        val timestamp = (calendarForKey(key)).apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+        }.timeInMillis
+        if (timestamp <= System.currentTimeMillis()) return false
+        return TaskReminderDateHelper.scheduleTask(
+            context = this,
+            taskTitle = task.title,
+            date = calendarForKey(key),
+            hour = hour,
+            minute = minute,
+            taskId = task.id.hashCode()
+        )
     }
 
     private fun showAddTaskDialog() {
@@ -511,6 +497,17 @@ class MainActivity : AppCompatActivity() {
         val repeatDetails = view.findViewById<View>(R.id.layout_repeat_details)
         val frequency = view.findViewById<AutoCompleteTextView>(R.id.spinner_repeat_frequency)
         val repeatDuration = view.findViewById<TextInputEditText>(R.id.et_repeat_duration)
+        var taskDate = selectedDate.clone() as Calendar
+        val dateButton = MaterialButton(this).apply {
+            text = SimpleDateFormat("d MMM yyyy", resources.configuration.locales[0]).format(taskDate.time)
+            setOnClickListener {
+                DatePickerDialog(this@MainActivity, { _, year, month, day ->
+                    taskDate = Calendar.getInstance().apply { set(year, month, day) }
+                    text = SimpleDateFormat("d MMM yyyy", resources.configuration.locales[0]).format(taskDate.time)
+                }, taskDate.get(Calendar.YEAR), taskDate.get(Calendar.MONTH), taskDate.get(Calendar.DAY_OF_MONTH)).show()
+            }
+        }
+        (view as LinearLayout).addView(dateButton, 1)
         val frequencies = arrayOf("Daily", "Weekly", "Monthly")
         frequency.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, frequencies))
         frequency.setText(frequencies[0], false)
@@ -537,6 +534,7 @@ class MainActivity : AppCompatActivity() {
             TimePickerDialog(this, { _: TimePicker, hour: Int, minute: Int ->
                 endHour = hour; endMinute = minute
                 endButton.text = String.format(Locale.ROOT, "%02d:%02d", hour, minute)
+                endButton.text = String.format(Locale.ROOT, "%02d:%02d", hour, minute)
                 updateDuration()
             }, endHour, endMinute, true).show()
         }
@@ -548,10 +546,17 @@ class MainActivity : AppCompatActivity() {
                 if (taskTitle.isBlank()) return@setPositiveButton
                 val isRepeat = repeat.isChecked
                 val count = if (isRepeat) (repeatDuration.text?.toString()?.toIntOrNull() ?: 7).coerceIn(1, 365) else 1
-                val step = if (frequency.text.toString().equals("Weekly", true)) 7 else 1
+                val freq = frequency.text.toString().lowercase(Locale.ROOT)
                 repeat(count) { index ->
-                    val dayNumber = ((selectedDayNumber.toIntOrNull() ?: 22) + index * step).toString()
-                    val entries = tasksByDay.getOrPut(dayNumber) { mutableListOf() }
+                    val occurrence = (taskDate.clone() as Calendar).apply {
+                        if (isRepeat) when (freq) {
+                            "weekly" -> add(Calendar.WEEK_OF_YEAR, index)
+                            "monthly" -> add(Calendar.MONTH, index)
+                            else -> add(Calendar.DAY_OF_YEAR, index)
+                        }
+                    }
+                    val key = dateKey(occurrence)
+                    val entries = tasksByDay.getOrPut(key) { mutableListOf() }
                     val newTask = TimelineEntry.Task(
                         time = String.format(Locale.ROOT, "%02d:%02d", startHour, startMinute),
                         endTime = String.format(Locale.ROOT, "%02d:%02d", endHour, endMinute),
@@ -561,10 +566,12 @@ class MainActivity : AppCompatActivity() {
                     )
                     val lastTask = entries.indexOfLast { it is TimelineEntry.Task }
                     entries.add(if (lastTask >= 0) lastTask + 1 else entries.size, newTask)
-                    dayViewsMap[dayNumber]?.first?.let { updateDayDots(dayNumber, it) }
+                    scheduleReminderForTask(newTask, key)
                 }
+                selectedDate = taskDate.clone() as Calendar
+                selectedDayNumber = dateKey(selectedDate)
                 saveTasksToPrefs()
-                timelineAdapter.updateEntries(tasksByDay[selectedDayNumber] ?: mutableListOf())
+                setupCalendar()
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -662,7 +669,7 @@ class MainActivity : AppCompatActivity() {
             val selectedCode = languageCodes[position]
             prefs.edit().putString(SettingsActivity.KEY_LANGUAGE, selectedCode).apply()
             val appLocale = if (selectedCode.isEmpty()) LocaleListCompat.getEmptyLocaleList()
-                            else LocaleListCompat.forLanguageTags(selectedCode)
+            else LocaleListCompat.forLanguageTags(selectedCode)
             AppCompatDelegate.setApplicationLocales(appLocale)
             Toast.makeText(this, "Language updated", Toast.LENGTH_SHORT).show()
         }
