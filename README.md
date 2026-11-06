@@ -26,7 +26,7 @@
 | **Networking** | [Retrofit 2](https://square.github.io/retrofit/), [OkHttpClient 4](https://square.github.io/okhttp/) (Logging Interceptor + 5s Timeouts), [Gson](https://github.com/google/gson) |
 | **Build Tools** | Gradle with Kotlin DSL (`build.gradle.kts`) & Version Catalog (`libs.versions.toml`) |
 | **SDK Versions** | `minSdk = 24` (Android 7.0), `compileSdk = 37`, `targetSdk = 37` |
-| **YouTube Link** | [YouTube](https://youtube.com/shorts/9E9OtRP0Ah4?feature=share) |
+| **YouTube Link** | [YouTube](https://youtu.be/kTxEsZMaX2s) |
 
 ---
 
